@@ -1,3 +1,4 @@
 .DS*
 *.mp3
 *.kar
+*.pyc
