@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
-import midifile, time, datetime, sys
+from syllableParser import syllableParser
+import midifile
+import time, datetime, sys
 import pygame
 import pyglet
 
@@ -8,7 +10,8 @@ filename = ''
 if len(sys.argv) > 1:
     filename = sys.argv[1]
 else:
-    filename=raw_input('Please enter filename of .mid or .kar file:')
+    print "Please provide a .kar karaoke file."
+    sys.exit(0)
 
 m=midifile.midifile()
 m.load_file(filename)
@@ -25,32 +28,32 @@ if not m.karfile:
     print "This is not a karaoke file."
     sys.exit(0)
 
-#get syllables and times
-syls = [(s,t) for (s,t) in zip(m.karsyl, m.kartimes) if s!='/' and s!='' and s!='\\']
+# get tuples for syllable and word start times
+(syls, words) = syllableParser(m.karsyl, m.kartimes)
 
-# put syllables in hash
-sylHash = {}
-for (s,t) in syls:
-    mp3FilePath = './mp3s/'+s.replace(' ','').decode('iso-8859-1')+'.mp3'
-    sylHash[s] = pyglet.media.load(mp3FilePath.encode('utf8'), streaming=False)
+# get TTS word files with hash to avoid copies
+wordHash = {}
+for (w,t) in words:
+    mp3FilePath = './mp3s/'+w.decode('iso-8859-1')+'.mp3'
+    wordHash[w] = pyglet.media.load(mp3FilePath.encode('utf8'), streaming=False)
 
 pygame.mixer.init()
 pygame.mixer.music.load(filename)
-pygame.mixer.music.set_volume(0)
+pygame.mixer.music.set_volume(0.0)
 pygame.mixer.music.play(0,0)
 start=datetime.datetime.now()
 
-nextSyl = 0
+nextWord = 0
 dt=0.
 while pygame.mixer.music.get_busy():
     dt=(datetime.datetime.now()-start).total_seconds()
     m.update_karaoke(dt)
-    
-    if nextSyl < len(syls):
-        (s,st) = syls[nextSyl]
-        if(dt>=st):
-            sylHash[s].play()
-            nextSyl = nextSyl + 1
+
+    if nextWord < len(words):
+        (w,wt) = words[nextWord]
+        if(dt>=wt):
+            wordHash[w].play()
+            nextWord = nextWord + 1
 
     for iline in range(3):
         l=font.size(m.karlinea[iline]+m.karlineb[iline])[0]

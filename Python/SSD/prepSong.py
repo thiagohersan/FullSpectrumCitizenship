@@ -1,13 +1,15 @@
 #!/usr/bin/env python
 
-import midifile, sys
-import urllib2
+from syllableParser import syllableParser
+import midifile
+import urllib2, sys
 
 filename = ''
 if len(sys.argv) > 1:
     filename = sys.argv[1]
 else:
-    filename=raw_input('Please enter filename of .mid or .kar file:')
+    print "Please provide a .kar karaoke file."
+    sys.exit(0)
 
 m=midifile.midifile()
 m.load_file(filename)
@@ -16,26 +18,8 @@ if not m.karfile:
     print "This is not a karaoke file."
     sys.exit(0)
 
-#get syllables and times
-karsyl = m.karsyl
-for (i,s) in enumerate(karsyl):
-    s = s.replace('/', ' ')
-    s = s.replace('\\', ' ')
-    s = s.replace(',','')
-    s = s.replace('_',' ')
-    karsyl[i] = s
-
-syls = [(s,t) for (s,t) in zip(karsyl, m.kartimes) if s!='/' and s!='' and s!='\\' and s!=' ']
-
-lyrics = ""
-for (s,t) in syls:
-    lyrics += s
-print lyrics.decode('iso-8859-1')
-
-for w in lyrics.split():
-    ## TODO: get tuple with time for each words initial syllable
-    print '++'+w.decode('iso-8859-1')+'++'
-
+# get tuples for syllable and word start times
+(syls, words) = syllableParser(m.karsyl, m.kartimes)
 
 # figure out which track has notes for the lyrics
 minDiff = -1
@@ -69,18 +53,18 @@ print [t for (s,t) in syls[0:5]]
 tracks2remove = [t for t in candidatesForRemoval if t!=noteTrack and t!=m.kartrack]
 m.write_file(filename, "__"+filename, tracks2remove, None)
 
-# put syllables in hash
-##TODO: maybe do this with words
-sylHash = {}
-for (s,t) in syls:
-    sylHash[s] = []
+
+# get TTS word files with hash to avoid copies
+wordHash = {}
+for (w,t) in words:
+    wordHash[w] = []
 
 url = 'http://translate.google.com/translate_tts?tl=pt&q='
 header = { 'User-Agent' : 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)' }
-for s in sylHash:
-    response = urllib2.urlopen(urllib2.Request(url+s.replace(' ',''), None, header))
+for w in wordHash:
+    response = urllib2.urlopen(urllib2.Request(url+w, None, header))
     responseBytes = response.read()
-    mp3FilePath = './mp3s/'+s.replace(' ','').decode('iso-8859-1')+'.mp3'
+    mp3FilePath = './mp3s/'+w.decode('iso-8859-1')+'.mp3'
     f = open(mp3FilePath, 'wb')
     f.write(responseBytes)
     f.close()
