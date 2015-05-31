@@ -17,10 +17,25 @@ if not m.karfile:
     sys.exit(0)
 
 #get syllables and times
-syls = [(s,t) for (s,t) in zip(m.karsyl, m.kartimes) if s!='/' and s!='' and s!='\\']
+karsyl = m.karsyl
+for (i,s) in enumerate(karsyl):
+    s = s.replace('/', ' ')
+    s = s.replace('\\', ' ')
+    s = s.replace(',','')
+    s = s.replace('_',' ')
+    karsyl[i] = s
 
-##TODO: create lyrics with words
-# parse _ and other symbols
+syls = [(s,t) for (s,t) in zip(karsyl, m.kartimes) if s!='/' and s!='' and s!='\\' and s!=' ']
+
+lyrics = ""
+for (s,t) in syls:
+    lyrics += s
+print lyrics.decode('iso-8859-1')
+
+for w in lyrics.split():
+    ## TODO: get tuple with time for each words initial syllable
+    print '++'+w.decode('iso-8859-1')+'++'
+
 
 # figure out which track has notes for the lyrics
 minDiff = -1
