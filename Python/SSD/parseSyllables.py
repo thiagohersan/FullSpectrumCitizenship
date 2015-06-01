@@ -1,4 +1,7 @@
-def syllableParser(karsyl__, kartimes__):
+# given karaoke syllables and times,
+#     return a cleaned up array of (syllable, time) tuples and
+#     an array of (word, time) tuples
+def parseSyllables(karsyl__, kartimes__):
     # some initial clean up
     karsyl = list(karsyl__)
     for (i,s) in enumerate(karsyl):

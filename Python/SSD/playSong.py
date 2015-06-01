@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from syllableParser import syllableParser
+from parseSyllables import parseSyllables
 import midifile
 import time, datetime, sys
 import pygame
@@ -29,7 +29,7 @@ if not m.karfile:
     sys.exit(0)
 
 # get tuples for syllable and word start times
-(syls, words) = syllableParser(m.karsyl, m.kartimes)
+(syls, words) = parseSyllables(m.karsyl, m.kartimes)
 
 # get TTS word files with hash to avoid copies
 wordHash = {}

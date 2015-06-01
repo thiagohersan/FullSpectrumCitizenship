@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from syllableParser import syllableParser
+from parseSyllables import parseSyllables
 import midifile
 import urllib2, urllib, sys, os
 from pydub import AudioSegment
@@ -23,7 +23,7 @@ if not m.karfile:
     sys.exit(0)
 
 # get tuples for syllable and word start times
-(syls, words) = syllableParser(m.karsyl, m.kartimes)
+(syls, words) = parseSyllables(m.karsyl, m.kartimes)
 
 # figure out which track has notes for the lyrics
 minDiff = -1
