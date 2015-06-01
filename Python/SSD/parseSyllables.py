@@ -47,4 +47,7 @@ def parseSyllables(karsyl__, kartimes__):
     for (w,t) in words:
        print w.decode('iso-8859-1')+" "+str(t)
 
+    # only return non-empty syllables
+    syls = [(s,t) for (s,t) in syls if s!='' and s!=' ']
+
     return (syls, words)

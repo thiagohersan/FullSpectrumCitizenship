@@ -65,8 +65,7 @@ for (w,t) in words:
 
 ## add syllables as well
 for (s,t) in syls:
-    if s != '' and s!= ' ':
-        wordHash[s.strip()] = []
+    wordHash[s.strip()] = []
 
 url = 'http://translate.google.com/translate_tts?tl=pt&q='
 header = { 'User-Agent' : 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)' }
