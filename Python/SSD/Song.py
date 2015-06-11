@@ -1,4 +1,4 @@
-import urllib2, urllib, os, wave
+import urllib2, urllib, os, wave, math, subprocess
 import midifile
 from pydub import AudioSegment
 from getPitch import getPitchHz
@@ -122,6 +122,11 @@ class Song:
         ##     this keeps track of tones relative to median
         self.tonedSyls = [(s.strip(),t,n-toneMedian) for ((s,t),n) in zip(self.syls, toneList)]
 
+        tones = ""
+        for (s,t,n) in self.tonedSyls:
+            tones += str(n)+" "
+        print tones
+
         ## check
         print "note track = "+str(noteTrack)
         print [v[5] for v in self.midi.notes if v[4]==noteTrack][0:5]
@@ -165,30 +170,37 @@ class Song:
             song.export(wavFilePath, format="wav")
             os.remove(mp3FilePath)
             wavWave = wave.open(wavFilePath)
+            wavLength = wavWave.getnframes()/float(wavWave.getframerate())
             wavFreq = getPitchHz(wavWave)
-            sylHash[w] = (wavFilePath, wavWave, wavFreq)
+            sylHash[w] = (wavFilePath, wavLength, wavFreq)
+            wavWave.close()
 
             if (voiceFreqMin == -1) or (wavFreq < voiceFreqMin):
                 voiceFreqMin = wavFreq
+                print "min %s"%w.decode('iso-8859-1')
             if (voiceFreqMax == -1) or (wavFreq > voiceFreqMax):
                 voiceFreqMax = wavFreq
+                print "max %s"%w.decode('iso-8859-1')
 
         ## get median voice freq
+        print "min %s  max %s" %(voiceFreqMin, voiceFreqMax)
         voiceFreqMedian = voiceFreqMin + (voiceFreqMax-voiceFreqMin)/2
+        return
 
         voice = []
         for (i, (s,t,n)) in enumerate(self.tonedSyls):
+            currentLength = sylHash[s][1]
             targetLength = 0
             if(i+1 < len(self.tonedSyls)):
                 targetLength = self.tonedSyls[i+1][1] - t
             else:
                 targetLength = self.tonedSyls[1][1] - self.tonedSyls[0][1]
 
-            mWav = sylHash[s][1]
-            ## TODO: scale time
-            ## TODO: write file i.wav or keep wav object
-
             currentFreq = sylHash[s][2]
-            targetFreq = (2**(n/12))*voiceFreqMedian
-            ## TODO: scale frequency
-            ## TODO: write file i.wav
+            targetFreq = (2**(n/12.0))*voiceFreqMedian
+
+            tempoParam = (currentLength-targetLength)/targetLength*100.0
+            pitchParam = 12.0 * math.log(targetFreq/currentFreq, 2)
+            outputFile = "%s/%s.wav" % (self.WAVS_DIR,i)
+            stParams = " %s %s -tempo=%s -pitch=%s" % (sylHash[s][0], outputFile, tempoParam, pitchParam)
+            subprocess.call('./soundstretch'+stParams, shell='True')
