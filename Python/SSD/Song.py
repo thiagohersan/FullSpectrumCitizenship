@@ -1,8 +1,13 @@
+from getPitch import getPitchHz
 import midifile
+import wave
 
 class Song:
     def __init__(self, filename):
         self.filename = filename
+        self.songname = filename.replace(".kar", "")
+        self.MP3S_DIR = "./mp3s/"+self.songname+"/"
+        self.WAVS_DIR = self.MP3S_DIR.replace("mp3","wav")
         self.syls = None
         self.words = None
         self.lyrics = None
@@ -62,7 +67,7 @@ class Song:
            print w.decode('iso-8859-1')+" "+str(t)
 
         # only return non-empty syllables
-        self.syls = [(s,t) for (s,t) in syls if s!='' and s!=' ']
+        self.syls = [(s.lower(),t) for (s,t) in syls if s!='' and s!=' ']
         self.words = words
         return (self.syls, self.words)
 
@@ -105,7 +110,7 @@ class Song:
             print "tone list length doesn't equal syllable list length"
         
         ## zip tone array into syls
-        ## TODO: (keep track of min/max??)
+        ## TODO: (keep track of relative tones with min/max/avg)
         self.tonedSyls = [(s,t,n) for ((s,t),n) in zip(self.syls, toneList)]
 
         ## check
@@ -118,3 +123,53 @@ class Song:
         self.midi.write_file(self.filename, self.filename.replace(".kar", "__.kar"), tracks2remove, None)
         
         return self.tonedSyls
+
+    def prepVoice(Self):
+        if self.tonedSyls is None:
+            self.parseTones()
+
+        ## hash for downloading initial files
+        sylHash = {}
+        for (s,t,n) in self.tonedSyls:
+            sylHash[s.strip()] = None
+
+        url = 'http://translate.google.com/translate_tts?tl=pt&q='
+        header = { 'User-Agent' : 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)' }
+
+        if not os.path.exists(MP3S_DIR):
+            os.makedirs(MP3S_DIR)
+        if not os.path.exists(WAVS_DIR):
+            os.makedirs(WAVS_DIR)
+
+        for w in sylHash:
+            response = urllib2.urlopen(urllib2.Request(url+urllib.quote(w), None, header))
+            responseBytes = response.read()
+            mp3FilePath = MP3S_DIR+w.decode('iso-8859-1')+'.mp3'
+            wavFilePath = mp3FilePath.replace('mp3','wav')
+            f = open(mp3FilePath, 'wb')
+            f.write(responseBytes)
+            f.close()
+            song = AudioSegment.from_mp3(mp3FilePath)
+            song.export(wavFilePath, format="wav")
+            os.remove(mp3FilePath)
+            sylHash[w] = wavFilePath
+
+        ## TODO: get freq of voice closest to avg sound to use as base freq
+        avgNoteFreq = 400
+
+        voice = []
+        for (i, (s,t,n)) in enumerate(self.tonedSyls):
+            targetLength = 0
+            if(i+1 < len(self.tonedSyls)):
+                targetLength = self.tonedSyls[i+1][1] - t
+            else:
+                targetLength = self.tonedSyls[1][1] - self.tonedSyls[0][1]
+
+            mWav = wave.open(sylHash[s.strip()])
+            ## TODO: scale time
+            ## TODO: write file i.wav or keep wav object
+
+            currentFreq = getPitchHz(mWav)
+            targetFreq = n*semitonesPerMidi+avgNoteFreq
+            ## TODO: scale frequency
+            ## TODO: write file i.wav
