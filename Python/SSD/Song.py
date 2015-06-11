@@ -170,6 +170,6 @@ class Song:
             ## TODO: write file i.wav or keep wav object
 
             currentFreq = getPitchHz(mWav)
-            targetFreq = n*semitonesPerMidi+avgNoteFreq
+            targetFreq = (2**(n/12))*avgNoteFreq
             ## TODO: scale frequency
             ## TODO: write file i.wav
