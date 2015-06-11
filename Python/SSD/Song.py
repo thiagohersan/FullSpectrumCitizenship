@@ -1,4 +1,4 @@
-import urllib2, urllib, sys, os, wave
+import urllib2, urllib, os, wave
 import midifile
 from pydub import AudioSegment
 from getPitch import getPitchHz
