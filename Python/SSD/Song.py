@@ -1,11 +1,12 @@
-from getPitch import getPitchHz
+import urllib2, urllib, sys, os, wave
 import midifile
-import wave
+from pydub import AudioSegment
+from getPitch import getPitchHz
 
 class Song:
     def __init__(self, filename):
         self.filename = filename
-        self.songname = filename.replace(".kar", "")
+        self.songname = os.path.basename(filename).replace(".kar", "")
         self.MP3S_DIR = "./mp3s/"+self.songname+"/"
         self.WAVS_DIR = self.MP3S_DIR.replace("mp3","wav")
         self.syls = None
@@ -80,6 +81,7 @@ class Song:
         minDiff = -1
         candidatesForRemoval = []
         toneList = []
+        toneMedian = -1
         for i in range(self.midi.ntracks):
             thisTrack = [v for v in self.midi.notes if v[4]==i]
             if (len(thisTrack) > 0):
@@ -90,6 +92,8 @@ class Song:
                     currentSum = 0
                     numberOfSums = len(self.syls)
                     currentToneList = []
+                    currentToneMin = -1
+                    currentToneMax = -1
 
                     for (s,t) in self.syls:
                         minDistance = -1
@@ -100,18 +104,23 @@ class Song:
                                 minDistanceTone = v[0]
                         currentSum = currentSum + minDistance*minDistance
                         currentToneList.append(minDistanceTone)
+                        if (currentToneMin == -1) or (minDistanceTone < currentToneMin):
+                            currentToneMin = minDistanceTone
+                        if (currentToneMax == -1) or (minDistanceTone > currentToneMax):
+                            currentToneMax = minDistanceTone
 
                     if(minDiff == -1) or (currentSum/numberOfSums < minDiff):
                         minDiff = currentSum/numberOfSums
                         noteTrack = i
                         toneList = currentToneList
+                        toneMedian = int(currentToneMin + (currentToneMax-currentToneMin)/2)
 
         if len(toneList) != len(self.syls):
             print "tone list length doesn't equal syllable list length"
         
         ## zip tone array into syls
-        ## TODO: (keep track of relative tones with min/max/avg)
-        self.tonedSyls = [(s,t,n) for ((s,t),n) in zip(self.syls, toneList)]
+        ##     this keeps track of tones relative to median
+        self.tonedSyls = [(s.strip(),t,n-toneMedian) for ((s,t),n) in zip(self.syls, toneList)]
 
         ## check
         print "note track = "+str(noteTrack)
@@ -124,27 +133,30 @@ class Song:
         
         return self.tonedSyls
 
-    def prepVoice(Self):
+    def prepVoice(self):
         if self.tonedSyls is None:
             self.parseTones()
 
         ## hash for downloading initial files
+        ##     this maps to (filename, wave object, frequency)
         sylHash = {}
         for (s,t,n) in self.tonedSyls:
-            sylHash[s.strip()] = None
+            sylHash[s] = None
 
         url = 'http://translate.google.com/translate_tts?tl=pt&q='
         header = { 'User-Agent' : 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)' }
 
-        if not os.path.exists(MP3S_DIR):
-            os.makedirs(MP3S_DIR)
-        if not os.path.exists(WAVS_DIR):
-            os.makedirs(WAVS_DIR)
+        if not os.path.exists(self.MP3S_DIR):
+            os.makedirs(self.MP3S_DIR)
+        if not os.path.exists(self.WAVS_DIR):
+            os.makedirs(self.WAVS_DIR)
 
+        voiceFreqMin = -1
+        voiceFreqMax = -1
         for w in sylHash:
             response = urllib2.urlopen(urllib2.Request(url+urllib.quote(w), None, header))
             responseBytes = response.read()
-            mp3FilePath = MP3S_DIR+w.decode('iso-8859-1')+'.mp3'
+            mp3FilePath = self.MP3S_DIR+w.decode('iso-8859-1')+'.mp3'
             wavFilePath = mp3FilePath.replace('mp3','wav')
             f = open(mp3FilePath, 'wb')
             f.write(responseBytes)
@@ -152,10 +164,17 @@ class Song:
             song = AudioSegment.from_mp3(mp3FilePath)
             song.export(wavFilePath, format="wav")
             os.remove(mp3FilePath)
-            sylHash[w] = wavFilePath
+            wavWave = wave.open(wavFilePath)
+            wavFreq = getPitchHz(wavWave)
+            sylHash[w] = (wavFilePath, wavWave, wavFreq)
 
-        ## TODO: get freq of voice closest to avg sound to use as base freq
-        avgNoteFreq = 400
+            if (voiceFreqMin == -1) or (wavFreq < voiceFreqMin):
+                voiceFreqMin = wavFreq
+            if (voiceFreqMax == -1) or (wavFreq > voiceFreqMax):
+                voiceFreqMax = wavFreq
+
+        ## get median voice freq
+        voiceFreqMedian = voiceFreqMin + (voiceFreqMax-voiceFreqMin)/2
 
         voice = []
         for (i, (s,t,n)) in enumerate(self.tonedSyls):
@@ -165,11 +184,11 @@ class Song:
             else:
                 targetLength = self.tonedSyls[1][1] - self.tonedSyls[0][1]
 
-            mWav = wave.open(sylHash[s.strip()])
+            mWav = sylHash[s][1]
             ## TODO: scale time
             ## TODO: write file i.wav or keep wav object
 
-            currentFreq = getPitchHz(mWav)
-            targetFreq = (2**(n/12))*avgNoteFreq
+            currentFreq = sylHash[s][2]
+            targetFreq = (2**(n/12))*voiceFreqMedian
             ## TODO: scale frequency
             ## TODO: write file i.wav
