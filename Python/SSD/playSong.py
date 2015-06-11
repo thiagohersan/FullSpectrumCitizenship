@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
-from parseSyllables import parseSyllables
-import midifile
+from Song import Song
 import time, datetime, sys
 import pygame
 import pyglet
@@ -13,8 +12,10 @@ else:
     print "Please provide a .kar karaoke file."
     sys.exit(0)
 
-m=midifile.midifile()
-m.load_file(filename)
+s = Song(filename)
+if not s.midi.karfile:
+    print "This is not a karaoke file."
+    sys.exit(0)
 
 pygame.init()
 screenx=1200
@@ -24,12 +25,8 @@ font=pygame.font.Font(None,60)
 color1=(100,100,250,0)
 color2=(250,250,250,0)
 
-if not m.karfile:
-    print "This is not a karaoke file."
-    sys.exit(0)
-
 # get tuples for syllable and word start times
-(syls, words) = parseSyllables(m.karsyl, m.kartimes)
+(syls, words) = s.parseLyrics()
 
 # get TTS word files with hash to avoid copies
 wordHash = {}
@@ -47,7 +44,7 @@ nextWord = 0
 dt=0.
 while pygame.mixer.music.get_busy():
     dt=(datetime.datetime.now()-start).total_seconds()
-    m.update_karaoke(dt)
+    s.midi.update_karaoke(dt)
 
     if nextWord < len(words):
         (w,wt) = words[nextWord]
@@ -56,10 +53,10 @@ while pygame.mixer.music.get_busy():
             nextWord = nextWord + 1
 
     for iline in range(3):
-        l=font.size(m.karlinea[iline]+m.karlineb[iline])[0]
+        l=font.size(s.midi.karlinea[iline]+s.midi.karlineb[iline])[0]
         x0a=screenx/2-l/2.
-        linea=font.render(m.karlinea[iline],0,color1)
-        lineb=font.render(m.karlineb[iline],0,color2)
+        linea=font.render(s.midi.karlinea[iline],0,color1)
+        lineb=font.render(s.midi.karlineb[iline],0,color2)
         recta=screen.blit(linea,[x0a,80+iline*60])
         x0b=x0a+recta.width
         recbt=screen.blit(lineb,[x0b,80+iline*60])
