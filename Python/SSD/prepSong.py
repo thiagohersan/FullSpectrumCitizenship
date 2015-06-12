@@ -15,5 +15,5 @@ if not s.midi.karfile:
     print "This is not a karaoke file."
     sys.exit(0)
 
-s.parseTones()
-s.prepVoice()
+s.prepSyllableVoice()
+#s.prepWordVoice()

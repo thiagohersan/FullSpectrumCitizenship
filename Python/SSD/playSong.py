@@ -25,32 +25,48 @@ font=pygame.font.Font(None,60)
 color1=(100,100,250,0)
 color2=(250,250,250,0)
 
-# get tuples for syllable and word start times
-(syls, words) = s.parseLyrics()
-
-# get TTS word files with hash to avoid copies
-wavList = []
-for i in range(len(syls)):
-    wavFilePath = s.WAVS_DIR+str(i)+".wav"
-    wavList.append(pyglet.media.load(wavFilePath, streaming=False))
-
 pygame.mixer.init()
 pygame.mixer.music.load(filename)
 pygame.mixer.music.set_volume(0.0)
+
+WORDS = True
+#WORDS = False
+
+# get tuples for syllable and word start times
+s.prepWordVoice() if WORDS is True else s.prepSyllableVoice()
+(syls, words) = s.parseLyrics()
+
+wavList = []
+if(WORDS is True):
+    for i in range(len(words)):
+        wavFilePath = s.WAVS_DIR+str(i)+".wav"
+        wavList.append(pyglet.media.load(wavFilePath, streaming=False))
+else:
+    for i in range(len(syls)):
+        wavFilePath = s.WAVS_DIR+str(i)+".wav"
+        wavList.append(pyglet.media.load(wavFilePath, streaming=False))
+
 pygame.mixer.music.play(0,0)
 start=datetime.datetime.now()
 
-nextSyl = 0
+nextIndex = 0
 dt=0.
 while pygame.mixer.music.get_busy():
     dt=(datetime.datetime.now()-start).total_seconds()
     s.midi.update_karaoke(dt)
 
-    if nextSyl < len(syls):
-        (sb,st) = syls[nextSyl]
-        if(dt>=st):
-            wavList[nextSyl].play()
-            nextSyl = nextSyl + 1
+    if(WORDS is True):
+        if nextIndex < len(words):
+            (i,t) = words[nextIndex]
+            if(dt>=t):
+                wavList[nextIndex].play()
+                nextIndex = nextIndex + 1
+    else:
+        if nextIndex < len(syls):
+            (i,t) = syls[nextIndex]
+            if(dt>=t):
+                wavList[nextIndex].play()
+                nextIndex = nextIndex + 1
 
     for iline in range(3):
         l=font.size(s.midi.karlinea[iline]+s.midi.karlineb[iline])[0]
