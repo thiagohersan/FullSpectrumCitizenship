@@ -133,7 +133,7 @@ class Song:
 
         ## write out 
         tracks2remove = [t for t in candidatesForRemoval if t!=noteTrack and t!=self.midi.kartrack]
-        self.midi.write_file(self.filename, self.filename.replace(".kar", "__.kar"), tracks2remove, None)
+        #self.midi.write_file(self.filename, self.filename.replace(".kar", "__.kar"), tracks2remove, None)
         
         ## toned word list
         ultimateSyls = []
