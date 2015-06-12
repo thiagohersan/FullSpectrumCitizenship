@@ -1,4 +1,4 @@
-import urllib2, urllib, os, wave, math, subprocess
+import urllib2, urllib, os, sys, wave, math, subprocess
 import midifile
 from pydub import AudioSegment
 from getPitch import getPitchHz
@@ -125,7 +125,8 @@ class Song:
 
         if len(toneTempoList) != len(self.syls):
             print "tone list length doesn't equal syllable list length"
-        
+            sys.exit(0)
+
         ## zip tone array into syls
         ##     this keeps track of tones relative to median
         self.tonedSyls = [(s.strip(),t,p-toneMedian,d) for ((s,t),(p,d)) in zip(self.syls, toneTempoList)]
@@ -276,14 +277,13 @@ class Song:
             targetLength = max(d, 1e-6)
 
             currentFreq = wordHash[w][2]
-            #targetFreq = (2**(n/12.0))*voiceFreqMedian
-            #targetFreq = (2**(n/12.0))*currentFreq
+            targetFreq = (2**(p[0]/12.0))*voiceFreqMedian
 
             tempoParam = (currentLength-targetLength)/targetLength*100.0
-            if(currentLength < targetLength):
-                tempoParam /= 2
-            #pitchParam = 12.0 * math.log(targetFreq/currentFreq, 2) / 4
-            pitchParam = 0
+            tempoParam /= 2 if(currentLength < targetLength) else 1.2
+
+            pitchParam = 12.0 * math.log(targetFreq/currentFreq, 2) / 3
+
             outputFile = "%s/%s.wav" % (self.WAVS_DIR,i)
             stParams = " %s %s -tempo=%s -pitch=%s" % (wordHash[w][0].replace(" ", "\ "), outputFile, tempoParam, pitchParam)
             subprocess.call('./soundstretch'+stParams, shell='True')
