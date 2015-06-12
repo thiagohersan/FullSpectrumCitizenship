@@ -80,10 +80,10 @@ class Song:
         candidatesForRemoval = []
         toneTempoList = []
         toneMedian = -1
-        for i in range(self.midi.ntracks):
-            thisTrack = [v for v in self.midi.notes if v[4]==i]
+        for n in range(self.midi.ntracks):
+            thisTrack = [v for v in self.midi.notes if v[4]==n]
             if (len(thisTrack) > 0):
-                candidatesForRemoval.append(i)
+                candidatesForRemoval.append(n)
 
                 # deal with percussion tracks with lots of "notes"
                 if len(thisTrack) < 2*len(self.syls):
@@ -119,7 +119,7 @@ class Song:
 
                     if(minDiff == -1) or (currentSum/numberOfSums < minDiff):
                         minDiff = currentSum/numberOfSums
-                        noteTrack = i
+                        noteTrack = n
                         toneTempoList = currentToneList
                         toneMedian = int(currentToneMin + (currentToneMax-currentToneMin)/2)
 
