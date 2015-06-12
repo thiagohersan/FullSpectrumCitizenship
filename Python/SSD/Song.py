@@ -64,9 +64,6 @@ class Song:
 
         ## TODO: put words with same start time back together
 
-        for (w,t) in words:
-           print w.decode('iso-8859-1')+" "+str(t)
-
         # only return non-empty syllables
         self.syls = [(s.lower(),t) for (s,t) in syls if s!='' and s!=' ']
         self.words = words
@@ -122,16 +119,6 @@ class Song:
         ##     this keeps track of tones relative to median
         self.tonedSyls = [(s.strip(),t,n-toneMedian) for ((s,t),n) in zip(self.syls, toneList)]
 
-        tones = ""
-        for (s,t,n) in self.tonedSyls:
-            tones += str(n)+" "
-        print tones
-
-        ## check
-        print "note track = "+str(noteTrack)
-        print [v[5] for v in self.midi.notes if v[4]==noteTrack][0:5]
-        print [t for (s,t) in self.syls[0:5]]
-    
         ## write out 
         tracks2remove = [t for t in candidatesForRemoval if t!=noteTrack and t!=self.midi.kartrack]
         self.midi.write_file(self.filename, self.filename.replace(".kar", "__.kar"), tracks2remove, None)
@@ -177,15 +164,11 @@ class Song:
 
             if (voiceFreqMin == -1) or (wavFreq < voiceFreqMin):
                 voiceFreqMin = wavFreq
-                print "min %s"%w.decode('iso-8859-1')
             if (voiceFreqMax == -1) or (wavFreq > voiceFreqMax):
                 voiceFreqMax = wavFreq
-                print "max %s"%w.decode('iso-8859-1')
 
         ## get median voice freq
-        print "min %s  max %s" %(voiceFreqMin, voiceFreqMax)
         voiceFreqMedian = voiceFreqMin + (voiceFreqMax-voiceFreqMin)/2
-        return
 
         voice = []
         for (i, (s,t,n)) in enumerate(self.tonedSyls):
@@ -198,9 +181,12 @@ class Song:
 
             currentFreq = sylHash[s][2]
             targetFreq = (2**(n/12.0))*voiceFreqMedian
+            targetFreq = (2**(n/12.0))*currentFreq
 
             tempoParam = (currentLength-targetLength)/targetLength*100.0
-            pitchParam = 12.0 * math.log(targetFreq/currentFreq, 2)
+            if(currentLength < targetLength):
+                tempoParam = 0
+            pitchParam = 12.0 * math.log(targetFreq/currentFreq, 2) / 2
             outputFile = "%s/%s.wav" % (self.WAVS_DIR,i)
-            stParams = " %s %s -tempo=%s -pitch=%s" % (sylHash[s][0], outputFile, tempoParam, pitchParam)
+            stParams = " %s %s -tempo=%s -pitch=%s" % (sylHash[s][0].replace(" ", "\ "), outputFile, tempoParam, pitchParam)
             subprocess.call('./soundstretch'+stParams, shell='True')
