@@ -29,10 +29,10 @@ color2=(250,250,250,0)
 (syls, words) = s.parseLyrics()
 
 # get TTS word files with hash to avoid copies
-wordHash = {}
-for (w,t) in words:
-    mp3FilePath = './mp3s/'+w.decode('iso-8859-1')+'.mp3'
-    wordHash[w] = pyglet.media.load(mp3FilePath.encode('utf8'), streaming=False)
+wavList = []
+for i in range(len(syls)):
+    wavFilePath = s.WAVS_DIR+str(i)+".wav"
+    wavList.append(pyglet.media.load(wavFilePath, streaming=False))
 
 pygame.mixer.init()
 pygame.mixer.music.load(filename)
@@ -40,17 +40,17 @@ pygame.mixer.music.set_volume(0.0)
 pygame.mixer.music.play(0,0)
 start=datetime.datetime.now()
 
-nextWord = 0
+nextSyl = 0
 dt=0.
 while pygame.mixer.music.get_busy():
     dt=(datetime.datetime.now()-start).total_seconds()
     s.midi.update_karaoke(dt)
 
-    if nextWord < len(words):
-        (w,wt) = words[nextWord]
-        if(dt>=wt):
-            wordHash[w].play()
-            nextWord = nextWord + 1
+    if nextSyl < len(syls):
+        (sb,st) = syls[nextSyl]
+        if(dt>=st):
+            wavList[nextSyl].play()
+            nextSyl = nextSyl + 1
 
     for iline in range(3):
         l=font.size(s.midi.karlinea[iline]+s.midi.karlineb[iline])[0]
