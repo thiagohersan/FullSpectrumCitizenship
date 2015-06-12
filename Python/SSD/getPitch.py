@@ -12,8 +12,8 @@ def getPitchHz(wavObject):
     # Take the fft and square each value
     fftData=abs(numpy.fft.rfft(wavFloats))**2
 
-    # find the maximum (less than 500Hz: ok for finding formants in voice)
-    cutOffFreq = 500*wavObject.getnframes()/wavObject.getframerate()
+    # find the maximum (less than 200Hz: ok for finding first frequency peak in voice)
+    cutOffFreq = 200*wavObject.getnframes()/wavObject.getframerate()
     which = fftData[1:cutOffFreq].argmax() + 1
 
     # use quadratic interpolation around the max
