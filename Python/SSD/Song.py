@@ -13,6 +13,7 @@ class Song:
         self.words = None
         self.lyrics = None
         self.tonedSyls = None
+        self.tonedWords = None
         self.midi=midifile.midifile()
         self.midi.load_file(filename)
 
@@ -77,7 +78,7 @@ class Song:
         # figure out which track has notes for the lyrics
         minDiff = -1
         candidatesForRemoval = []
-        toneList = []
+        toneTempoList = []
         toneMedian = -1
         for i in range(self.midi.ntracks):
             thisTrack = [v for v in self.midi.notes if v[4]==i]
@@ -95,12 +96,22 @@ class Song:
                     for (s,t) in self.syls:
                         minDistance = -1
                         minDistanceTone = -1
-                        for v in thisTrack:
+                        minDistanceTempo = -1
+                        for (i,v) in enumerate(thisTrack):
                             if (minDistance == -1) or abs(t-v[5])<minDistance:
                                 minDistance = abs(t-v[5])
                                 minDistanceTone = v[0]
+                                minDistanceTempo = 0
+
+                                ii = i
+                                while (minDistanceTempo == 0) and (ii+1<len(thisTrack)):
+                                    minDistanceTempo = thisTrack[ii][5]-v[5]
+                                    ii += 1
+                                if (minDistanceTempo == 0):
+                                    minDistanceTempo = thisTrack[ii][5]-thisTrack[ii-1][5]
+
                         currentSum = currentSum + minDistance*minDistance
-                        currentToneList.append(minDistanceTone)
+                        currentToneList.append((minDistanceTone,minDistanceTempo))
                         if (currentToneMin == -1) or (minDistanceTone < currentToneMin):
                             currentToneMin = minDistanceTone
                         if (currentToneMax == -1) or (minDistanceTone > currentToneMax):
@@ -109,30 +120,57 @@ class Song:
                     if(minDiff == -1) or (currentSum/numberOfSums < minDiff):
                         minDiff = currentSum/numberOfSums
                         noteTrack = i
-                        toneList = currentToneList
+                        toneTempoList = currentToneList
                         toneMedian = int(currentToneMin + (currentToneMax-currentToneMin)/2)
 
-        if len(toneList) != len(self.syls):
+        if len(toneTempoList) != len(self.syls):
             print "tone list length doesn't equal syllable list length"
         
         ## zip tone array into syls
         ##     this keeps track of tones relative to median
-        self.tonedSyls = [(s.strip(),t,n-toneMedian) for ((s,t),n) in zip(self.syls, toneList)]
+        self.tonedSyls = [(s.strip(),t,p-toneMedian,d) for ((s,t),(p,d)) in zip(self.syls, toneTempoList)]
 
         ## write out 
         tracks2remove = [t for t in candidatesForRemoval if t!=noteTrack and t!=self.midi.kartrack]
         self.midi.write_file(self.filename, self.filename.replace(".kar", "__.kar"), tracks2remove, None)
         
-        return self.tonedSyls
+        ## toned word list
+        ultimateSyls = []
+        for (s,t,p,d) in self.tonedSyls:
+            for w in s.split():
+                ultimateSyls.append((w,t,p,d))
 
-    def prepVoice(self):
+        # get tuple of (word, (trigger-times), (pitches), duration)
+        words = []
+        sylIndex = 0
+        for w in self.lyrics.lower().split():
+            (s,t,p,d) = ultimateSyls[sylIndex]
+            fromSyls = s
+            tt = [t]
+            pp = [p]
+            dd = d
+            sylIndex += 1
+            while (fromSyls != w):
+                (s,t,p,d) = ultimateSyls[sylIndex]
+                fromSyls += s
+                tt.append(t)
+                pp.append(p)
+                dd += d
+                sylIndex += 1
+            words.append((w,tt, pp, dd))
+
+        self.tonedWords = words
+
+        return (self.tonedSyls, self.tonedWords)
+
+    def prepSyllableVoice(self):
         if self.tonedSyls is None:
             self.parseTones()
 
         ## hash for downloading initial files
         ##     this maps to (filename, wave object, frequency)
         sylHash = {}
-        for (s,t,n) in self.tonedSyls:
+        for (s,t,p,d) in self.tonedSyls:
             sylHash[s] = None
 
         url = 'http://translate.google.com/translate_tts?tl=pt&q='
@@ -145,7 +183,69 @@ class Song:
 
         voiceFreqMin = -1
         voiceFreqMax = -1
-        for w in sylHash:
+        for s in sylHash:
+            response = urllib2.urlopen(urllib2.Request(url+urllib.quote(s), None, header))
+            responseBytes = response.read()
+            mp3FilePath = self.MP3S_DIR+s.decode('iso-8859-1')+'.mp3'
+            wavFilePath = mp3FilePath.replace('mp3','wav')
+            f = open(mp3FilePath, 'wb')
+            f.write(responseBytes)
+            f.close()
+            song = AudioSegment.from_mp3(mp3FilePath)
+            song.export(wavFilePath, format="wav")
+            os.remove(mp3FilePath)
+            wavWave = wave.open(wavFilePath)
+            wavLength = wavWave.getnframes()/float(wavWave.getframerate())
+            wavFreq = getPitchHz(wavWave)
+            sylHash[s] = (wavFilePath, wavLength, wavFreq)
+            wavWave.close()
+
+            if (voiceFreqMin == -1) or (wavFreq < voiceFreqMin):
+                voiceFreqMin = wavFreq
+            if (voiceFreqMax == -1) or (wavFreq > voiceFreqMax):
+                voiceFreqMax = wavFreq
+
+        ## get median voice freq
+        voiceFreqMedian = voiceFreqMin + (voiceFreqMax-voiceFreqMin)/2
+
+        voice = []
+        for (i, (s,t,p,d)) in enumerate(self.tonedSyls):
+            currentLength = sylHash[s][1]
+            targetLength = max(d, 1e-6)
+
+            currentFreq = sylHash[s][2]
+            targetFreq = (2**(p/12.0))*voiceFreqMedian
+            #targetFreq = (2**(p/12.0))*currentFreq
+
+            tempoParam = (currentLength-targetLength)/targetLength*100.0
+            if(currentLength < targetLength):
+                tempoParam /= 2
+            pitchParam = 12.0 * math.log(targetFreq/currentFreq, 2) / 4
+            outputFile = "%s/%s.wav" % (self.WAVS_DIR,i)
+            stParams = " %s %s -tempo=%s -pitch=%s" % (sylHash[s][0].replace(" ", "\ "), outputFile, tempoParam, pitchParam)
+            subprocess.call('./soundstretch'+stParams, shell='True')
+
+    def prepWordVoice(self):
+        if self.tonedWords is None:
+            self.parseTones()
+
+        ## hash for downloading initial files
+        ##     this maps to (filename, wave object, frequency)
+        wordHash = {}
+        for (w,t,p,d) in self.tonedWords:
+            wordHash[w] = None
+
+        url = 'http://translate.google.com/translate_tts?tl=pt&q='
+        header = { 'User-Agent' : 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)' }
+
+        if not os.path.exists(self.MP3S_DIR):
+            os.makedirs(self.MP3S_DIR)
+        if not os.path.exists(self.WAVS_DIR):
+            os.makedirs(self.WAVS_DIR)
+
+        voiceFreqMin = -1
+        voiceFreqMax = -1
+        for w in wordHash:
             response = urllib2.urlopen(urllib2.Request(url+urllib.quote(w), None, header))
             responseBytes = response.read()
             mp3FilePath = self.MP3S_DIR+w.decode('iso-8859-1')+'.mp3'
@@ -159,7 +259,7 @@ class Song:
             wavWave = wave.open(wavFilePath)
             wavLength = wavWave.getnframes()/float(wavWave.getframerate())
             wavFreq = getPitchHz(wavWave)
-            sylHash[w] = (wavFilePath, wavLength, wavFreq)
+            wordHash[w] = (wavFilePath, wavLength, wavFreq)
             wavWave.close()
 
             if (voiceFreqMin == -1) or (wavFreq < voiceFreqMin):
@@ -171,22 +271,19 @@ class Song:
         voiceFreqMedian = voiceFreqMin + (voiceFreqMax-voiceFreqMin)/2
 
         voice = []
-        for (i, (s,t,n)) in enumerate(self.tonedSyls):
-            currentLength = sylHash[s][1]
-            targetLength = 0
-            if(i+1 < len(self.tonedSyls)):
-                targetLength = self.tonedSyls[i+1][1] - t
-            else:
-                targetLength = self.tonedSyls[1][1] - self.tonedSyls[0][1]
+        for (i, (w,t,p,d)) in enumerate(self.tonedWords):
+            currentLength = wordHash[w][1]
+            targetLength = max(d, 1e-6)
 
-            currentFreq = sylHash[s][2]
-            targetFreq = (2**(n/12.0))*voiceFreqMedian
-            targetFreq = (2**(n/12.0))*currentFreq
+            currentFreq = wordHash[w][2]
+            #targetFreq = (2**(n/12.0))*voiceFreqMedian
+            #targetFreq = (2**(n/12.0))*currentFreq
 
             tempoParam = (currentLength-targetLength)/targetLength*100.0
             if(currentLength < targetLength):
-                tempoParam = 0
-            pitchParam = 12.0 * math.log(targetFreq/currentFreq, 2) / 2
+                tempoParam /= 2
+            #pitchParam = 12.0 * math.log(targetFreq/currentFreq, 2) / 4
+            pitchParam = 0
             outputFile = "%s/%s.wav" % (self.WAVS_DIR,i)
-            stParams = " %s %s -tempo=%s -pitch=%s" % (sylHash[s][0].replace(" ", "\ "), outputFile, tempoParam, pitchParam)
+            stParams = " %s %s -tempo=%s -pitch=%s" % (wordHash[w][0].replace(" ", "\ "), outputFile, tempoParam, pitchParam)
             subprocess.call('./soundstretch'+stParams, shell='True')
