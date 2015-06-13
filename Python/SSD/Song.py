@@ -20,6 +20,9 @@ class Song:
     #   return a cleaned up array of (syllable, time) tuples and
     #   an array of (word, time) tuples
     def parseLyrics(self):
+        if (self.syls is not None) and (self.words is not None):
+            return (self.syls, self.words)
+
         # some initial clean up
         karsyl = list(self.midi.karsyl)
         kartimes = list(self.midi.kartimes)
@@ -73,10 +76,13 @@ class Song:
         return (self.syls, self.words)
 
     def parseTones(self):
-        noteTrack = None
+        if (self.tonedSyls is not None) and (self.tonedWords is not None):
+            return (self.tonedSyls, self.tonedWords)
+
         if self.syls is None or self.words is None:
             self.parseLyrics()
 
+        noteTrack = None
         # figure out which track has notes for the lyrics
         minDiff = -1
         candidatesForRemoval = []
@@ -136,6 +142,8 @@ class Song:
         ## write out 
         tracks2remove = [t for t in candidatesForRemoval if t!=noteTrack and t!=self.midi.kartrack]
         #self.midi.write_file(self.filename, self.filename.replace(".kar", "__.kar"), tracks2remove, None)
+        # TODO: timidity -A 100 kars/tristeza__.kar -OwM -o tris.wav
+        #       remove __.kar
         
         ## toned word list
         ultimateSyls = []
