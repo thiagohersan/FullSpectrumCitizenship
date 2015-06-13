@@ -27,6 +27,8 @@ class Song:
             s = s.replace('/', ' ')
             s = s.replace('\\', ' ')
             s = s.replace('_',' ')
+            s = s.replace('\"', '')
+            s = s.replace('\'', '')
             s = s.replace(',', '')
             s = s.replace('.', '')
             s = s.replace('!', '')
