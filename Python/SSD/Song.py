@@ -2,6 +2,10 @@ import urllib2, urllib, os, sys, wave, math, subprocess
 import midifile
 from getPitch import getPitchHz
 
+# escape space on filenames being sent to shell commands
+def escSpace(s):
+    return s.replace(" ", "\ ")
+
 class Song:
     def __init__(self, filename):
         self.filename = filename
@@ -179,7 +183,7 @@ class Song:
             self.parseTones()
 
         ## hash for downloading initial files
-        ##     this maps to (filename, wave object, frequency)
+        ##     this maps to (filename, wave object)
         sylHash = {}
         for (s,t,p,d) in self.tonedSyls:
             sylHash[s] = None
@@ -192,8 +196,6 @@ class Song:
         if not os.path.exists(self.WAVS_DIR):
             os.makedirs(self.WAVS_DIR)
 
-        voiceFreqMin = -1
-        voiceFreqMax = -1
         for s in sylHash:
             response = urllib2.urlopen(urllib2.Request(url+urllib.quote(s), None, header))
             responseBytes = response.read()
@@ -202,47 +204,31 @@ class Song:
             f = open(mp3FilePath, 'wb')
             f.write(responseBytes)
             f.close()
-            subprocess.call('ffmpeg -y -i '+mp3FilePath.replace(" ", "\ ")+" -ar 44100 "+wavFilePath.replace(" ", "\ "), shell=True, stdout=self.FNULL, stderr=subprocess.STDOUT)
+            ffParams = "-y -i %s -ar 44100 %s"%(escSpace(mp3FilePath), escSpace(wavFilePath))
+            subprocess.call('ffmpeg '+ffParams, shell=True, stdout=self.FNULL, stderr=subprocess.STDOUT)
             os.remove(mp3FilePath)
             wavWave = wave.open(wavFilePath)
             wavLength = wavWave.getnframes()/float(wavWave.getframerate())
-            wavFreq = getPitchHz(wavWave)
-            sylHash[s] = (wavFilePath, wavLength, wavFreq)
             wavWave.close()
+            sylHash[s] = (wavFilePath, wavLength)
 
-            if (voiceFreqMin == -1) or (wavFreq < voiceFreqMin):
-                voiceFreqMin = wavFreq
-            if (voiceFreqMax == -1) or (wavFreq > voiceFreqMax):
-                voiceFreqMax = wavFreq
-
-        ## get median voice freq
-        voiceFreqMedian = voiceFreqMin + (voiceFreqMax-voiceFreqMin)/2
-
-        voice = []
         for (i, (s,t,p,d)) in enumerate(self.tonedSyls):
             currentLength = sylHash[s][1]
             targetLength = max(d, 1e-6)
 
-            currentFreq = sylHash[s][2]
-            targetFreq = (2**(p/12.0))*voiceFreqMedian
-            #targetFreq = (2**(p/12.0))*currentFreq
-
             tempoParam = (currentLength-targetLength)/targetLength*100.0
             tempoParam = 0 if(currentLength < targetLength) else tempoParam/1.2
 
-            pitchParam = 12.0 * math.log(targetFreq/currentFreq, 2) / 4
-            pitchParam = 0
-
             outputFile = "%s/%s.wav" % (self.WAVS_DIR,i)
-            stParams = " %s %s -tempo=%s -pitch=%s" % (sylHash[s][0].replace(" ", "\ "), outputFile, tempoParam, pitchParam)
-            subprocess.call('./soundstretch'+stParams, shell='True', stdout=self.FNULL, stderr=subprocess.STDOUT)
+            stParams = "%s %s -tempo=%s" % (escSpace(sylHash[s][0]), outputFile, tempoParam)
+            subprocess.call('./soundstretch '+stParams, shell='True', stdout=self.FNULL, stderr=subprocess.STDOUT)
 
     def prepWordVoice(self):
         if self.tonedWords is None:
             self.parseTones()
 
         ## hash for downloading initial files
-        ##     this maps to (filename, wave object, frequency)
+        ##     this maps to (filename, wave object)
         wordHash = {}
         for (w,t,p,d) in self.tonedWords:
             wordHash[w] = None
@@ -255,8 +241,6 @@ class Song:
         if not os.path.exists(self.WAVS_DIR):
             os.makedirs(self.WAVS_DIR)
 
-        voiceFreqMin = -1
-        voiceFreqMax = -1
         for w in wordHash:
             response = urllib2.urlopen(urllib2.Request(url+urllib.quote(w), None, header))
             responseBytes = response.read()
@@ -265,37 +249,22 @@ class Song:
             f = open(mp3FilePath, 'wb')
             f.write(responseBytes)
             f.close()
-            subprocess.call('ffmpeg -y -i '+mp3FilePath+" -ar 44100 "+wavFilePath, shell=True, stdout=self.FNULL, stderr=subprocess.STDOUT)
+            ffParams = "-y -i %s -ar 44100 %s"%(escSpace(mp3FilePath), escSpace(wavFilePath))
+            subprocess.call('ffmpeg '+ffParams, shell=True, stdout=self.FNULL, stderr=subprocess.STDOUT)
             os.remove(mp3FilePath)
             wavWave = wave.open(wavFilePath)
             wavLength = wavWave.getnframes()/float(wavWave.getframerate())
-            wavFreq = getPitchHz(wavWave)
-            wordHash[w] = (wavFilePath, wavLength, wavFreq)
             wavWave.close()
+            wordHash[w] = (wavFilePath, wavLength)
 
-            if (voiceFreqMin == -1) or (wavFreq < voiceFreqMin):
-                voiceFreqMin = wavFreq
-            if (voiceFreqMax == -1) or (wavFreq > voiceFreqMax):
-                voiceFreqMax = wavFreq
-
-        ## get median voice freq
-        voiceFreqMedian = voiceFreqMin + (voiceFreqMax-voiceFreqMin)/2
-
-        voice = []
         for (i, (w,t,p,d)) in enumerate(self.tonedWords):
             currentLength = wordHash[w][1]
             targetLength = max(d, 1e-6)
-
-            currentFreq = wordHash[w][2]
-            targetFreq = (2**(p[0]/12.0))*voiceFreqMedian
 
             tempoParam = (currentLength-targetLength)/targetLength*100.0
             #tempoParam /= 3 if(currentLength < targetLength) else 1.2
             tempoParam = 0 if(currentLength < targetLength) else tempoParam/1.2
 
-            pitchParam = 12.0 * math.log(targetFreq/currentFreq, 2) / 3
-            pitchParam = 0
-
             outputFile = "%s/%s.wav" % (self.WAVS_DIR,i)
-            stParams = " %s %s -tempo=%s -pitch=%s" % (wordHash[w][0].replace(" ", "\ "), outputFile, tempoParam, pitchParam)
-            subprocess.call('./soundstretch'+stParams, shell='True', stdout=self.FNULL, stderr=subprocess.STDOUT)
+            stParams = "%s %s -tempo=%s" % (escSpace(wordHash[w][0]), outputFile, tempoParam)
+            subprocess.call('./soundstretch '+stParams, shell='True', stdout=self.FNULL, stderr=subprocess.STDOUT)
