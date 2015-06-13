@@ -194,7 +194,7 @@ class Song:
             f = open(mp3FilePath, 'wb')
             f.write(responseBytes)
             f.close()
-            subprocess.call('ffmpeg -y -i '+mp3FilePath+" -ar 44100 "+wavFilePath, shell=True, stdout=self.FNULL, stderr=subprocess.STDOUT)
+            subprocess.call('ffmpeg -y -i '+mp3FilePath.replace(" ", "\ ")+" -ar 44100 "+wavFilePath.replace(" ", "\ "), shell=True, stdout=self.FNULL, stderr=subprocess.STDOUT)
             os.remove(mp3FilePath)
             wavWave = wave.open(wavFilePath)
             wavLength = wavWave.getnframes()/float(wavWave.getframerate())
@@ -220,12 +220,14 @@ class Song:
             #targetFreq = (2**(p/12.0))*currentFreq
 
             tempoParam = (currentLength-targetLength)/targetLength*100.0
-            if(currentLength < targetLength):
-                tempoParam /= 2
+            tempoParam = 0 if(currentLength < targetLength) else tempoParam/1.2
+
             pitchParam = 12.0 * math.log(targetFreq/currentFreq, 2) / 4
+            pitchParam = 0
+
             outputFile = "%s/%s.wav" % (self.WAVS_DIR,i)
             stParams = " %s %s -tempo=%s -pitch=%s" % (sylHash[s][0].replace(" ", "\ "), outputFile, tempoParam, pitchParam)
-            subprocess.call('./soundstretch'+stParams, shell='True')
+            subprocess.call('./soundstretch'+stParams, shell='True', stdout=self.FNULL, stderr=subprocess.STDOUT)
 
     def prepWordVoice(self):
         if self.tonedWords is None:
