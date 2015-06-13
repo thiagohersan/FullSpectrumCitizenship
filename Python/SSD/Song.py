@@ -1,6 +1,5 @@
 import urllib2, urllib, os, sys, wave, math, subprocess
 import midifile
-from pydub import AudioSegment
 from getPitch import getPitchHz
 
 class Song:
@@ -16,6 +15,7 @@ class Song:
         self.tonedWords = None
         self.midi=midifile.midifile()
         self.midi.load_file(filename)
+        self.FNULL = open(os.devnull, 'w')
 
     #   return a cleaned up array of (syllable, time) tuples and
     #   an array of (word, time) tuples
@@ -192,8 +192,7 @@ class Song:
             f = open(mp3FilePath, 'wb')
             f.write(responseBytes)
             f.close()
-            song = AudioSegment.from_mp3(mp3FilePath)
-            song.export(wavFilePath, format="wav")
+            subprocess.call('ffmpeg -y -i '+mp3FilePath+" -ar 44100 "+wavFilePath, shell=True, stdout=self.FNULL, stderr=subprocess.STDOUT)
             os.remove(mp3FilePath)
             wavWave = wave.open(wavFilePath)
             wavLength = wavWave.getnframes()/float(wavWave.getframerate())
@@ -254,8 +253,7 @@ class Song:
             f = open(mp3FilePath, 'wb')
             f.write(responseBytes)
             f.close()
-            song = AudioSegment.from_mp3(mp3FilePath)
-            song.export(wavFilePath, format="wav")
+            subprocess.call('ffmpeg -y -i '+mp3FilePath+" -ar 44100 "+wavFilePath, shell=True, stdout=self.FNULL, stderr=subprocess.STDOUT)
             os.remove(mp3FilePath)
             wavWave = wave.open(wavFilePath)
             wavLength = wavWave.getnframes()/float(wavWave.getframerate())
@@ -280,10 +278,12 @@ class Song:
             targetFreq = (2**(p[0]/12.0))*voiceFreqMedian
 
             tempoParam = (currentLength-targetLength)/targetLength*100.0
-            tempoParam /= 2 if(currentLength < targetLength) else 1.2
+            #tempoParam /= 3 if(currentLength < targetLength) else 1.2
+            tempoParam = 0 if(currentLength < targetLength) else tempoParam/1.2
 
             pitchParam = 12.0 * math.log(targetFreq/currentFreq, 2) / 3
+            pitchParam = 0
 
             outputFile = "%s/%s.wav" % (self.WAVS_DIR,i)
             stParams = " %s %s -tempo=%s -pitch=%s" % (wordHash[w][0].replace(" ", "\ "), outputFile, tempoParam, pitchParam)
-            subprocess.call('./soundstretch'+stParams, shell='True')
+            subprocess.call('./soundstretch'+stParams, shell='True', stdout=self.FNULL, stderr=subprocess.STDOUT)
