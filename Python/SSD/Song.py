@@ -73,7 +73,17 @@ class Song:
                 fromSyls += s
                 sylIndex += 1
 
-        ## TODO: put words with same start time back together
+        ## put words with same start time back together
+        ultimateWords = []
+        i = 0
+        while (i < len(words)):
+            currentWord = words[i]
+            ii = i+1
+            while (ii < len(words)) and (words[i][1] == words[ii][1]):
+                currentWord = (currentWord[0]+" "+words[ii][0], currentWord[1])
+                ii += 1
+            i = ii
+            ultimateWords.append(currentWord)
 
         # only return non-empty syllables
         self.syls = [(s.lower(),t) for (s,t) in syls if s!='' and s!=' ']
@@ -168,6 +178,8 @@ class Song:
         for (s,t,p,d) in self.tonedSyls:
             for w in s.split():
                 ultimateSyls.append((w,t,p,d))
+            if(len(s.split()) > 1):
+                print "%s"%(s.decode('iso-8859-1'))
 
         # get tuple of (word, (trigger-times), (pitches), duration)
         words = []
@@ -188,7 +200,22 @@ class Song:
                 sylIndex += 1
             words.append((w,tt, pp, dd))
 
-        self.tonedWords = words
+        ## put words with same start time back together
+        ultimateWords = []
+        i = 0
+        while (i < len(words)):
+            currentWord = words[i]
+            ii = i+1
+            while (ii < len(words)) and (words[i][1][0] == words[ii][1][0]):
+                currentWord = (currentWord[0]+" "+words[ii][0],
+                    currentWord[1]+words[ii][1],
+                    currentWord[2]+words[ii][2],
+                    currentWord[3])
+                ii += 1
+            i = ii
+            ultimateWords.append(currentWord)
+
+        self.tonedWords = ultimateWords
 
         return (self.tonedSyls, self.tonedWords)
 
@@ -274,6 +301,9 @@ class Song:
         voiceData = []
         voiceWriter = None
         for (i, (w,t,p,d)) in enumerate(self.tonedWords):
+            if(" " in w):
+                print "%s.wav %s"%(i, w)
+
             currentLength = wordHash[w][1]
             targetLength = max(d, 1e-6)
 
