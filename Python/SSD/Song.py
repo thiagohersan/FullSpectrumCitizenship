@@ -244,7 +244,6 @@ class Song:
 
         voiceData = []
         voiceWriter = None
-        overshot = 0
         for (i, (w,t,p,d)) in enumerate(self.tonedWords):
             currentLength = wordHash[w][1]
             targetLength = max(d, 1e-6)
@@ -269,10 +268,14 @@ class Song:
                 voiceWriter.setparams((voiceReader.getnchannels(), sampwidth, framerate, 8, 'NONE', 'NONE'))
 
             # pad space between words with 0s
-            ## TODO: deal with case of overshooting (due to words with same start time)
+            # deal with case of overshooting (due to words with same start time)
             numZeros = (int((t[0]-self.firstNoteTime)*framerate) - len(voiceData))
             if(numZeros < 0):
-                overshot += 1
+                for i in range(numZeros,0):
+                    voiceData[i] *= 0.5
+                    if (i-numZeros < len(voiceFloats)):
+                        voiceData[i] += voiceFloats[i-numZeros]*0.5
+                voiceFloats = voiceFloats[-numZeros:]
 
             voiceData += [0] * numZeros
             voiceData += voiceFloats
@@ -280,9 +283,9 @@ class Song:
             # close voice wav
             voiceReader.close()
 
-        for (x,y) in zip(voiceData[0::2], voiceData[1::2]):
-            voiceWriter.writeframes(wave.struct.pack("hh", x,y))
+        print "writing to disk"
+        for x in voiceData:
+            voiceWriter.writeframes(wave.struct.pack("h", x))
         voiceWriter.close()
 
-        print "overshot %s"%overshot
         # TODO: remove all temp wav files
