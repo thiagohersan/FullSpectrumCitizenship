@@ -143,12 +143,18 @@ class Song:
         ##     this keeps track of tones relative to median
         self.tonedSyls = [(s.strip(),t,p-toneMedian,d) for ((s,t),(p,d)) in zip(self.syls, toneTempoList)]
 
-        ## write out 
+        ## write out wav from stripped midi
+        if not os.path.exists(self.WAVS_DIR):
+            os.makedirs(self.WAVS_DIR)
+
         tracks2remove = [t for t in candidatesForRemoval if t!=noteTrack and t!=self.midi.kartrack]
-        #self.midi.write_file(self.filename, self.filename.replace(".kar", "__.kar"), tracks2remove, None)
-        # TODO: timidity -A 100 kars/tristeza__.kar -OwM -o tris.wav
-        #       remove __.kar
-        
+        outFileKar = self.filename.replace(".kar", "__.kar")
+        self.midi.write_file(self.filename, outFileKar, tracks2remove, None)
+        outFileWav = "%s/00.%s.wav" % (self.WAVS_DIR,self.songname)
+        midiParams = "-A 100 %s -OwM -o %s"%(outFileKar, outFileWav)
+        subprocess.call('timidity '+midiParams, shell=True, stdout=self.FNULL, stderr=subprocess.STDOUT)
+        os.remove(outFileKar)
+
         ## toned word list
         ultimateSyls = []
         for (s,t,p,d) in self.tonedSyls:
