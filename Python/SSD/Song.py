@@ -1,4 +1,4 @@
-import urllib2, urllib, os, sys, wave, math, subprocess
+import urllib2, urllib, os, sys, shutil, wave, math, subprocess
 import midifile, wave
 from getPitch import getPitchHz
 
@@ -139,9 +139,6 @@ class Song:
                         firstNoteTime = thisTracksFirstNoteTime
                         toneMedian = int(currentToneMin + (currentToneMax-currentToneMin)/2)
 
-        noteTrackData = [v for v in self.midi.notes if v[4]==noteTrack]
-        print noteTrackData[:5]
-
         if len(toneTempoList) != len(self.syls):
             print "tone list length doesn't equal syllable list length"
             sys.exit(0)
@@ -220,11 +217,11 @@ class Song:
             f.close()
             ffParams = "-y -i %s -ar 44100 %s"%(escSpace(mp3FilePath), escSpace(wavFilePath))
             subprocess.call('ffmpeg '+ffParams, shell=True, stdout=self.FNULL, stderr=subprocess.STDOUT)
-            os.remove(mp3FilePath)
             wavWave = wave.open(wavFilePath)
             wavLength = wavWave.getnframes()/float(wavWave.getframerate())
             wavWave.close()
             sylHash[s] = (wavFilePath, wavLength)
+        shutil.rmtree(self.MP3S_DIR)
 
         for (i, (s,t,p,d)) in enumerate(self.tonedSyls):
             currentLength = sylHash[s][1]
@@ -265,15 +262,14 @@ class Song:
             f.close()
             ffParams = "-y -i %s -ar 44100 %s"%(escSpace(mp3FilePath), escSpace(wavFilePath))
             subprocess.call('ffmpeg '+ffParams, shell=True, stdout=self.FNULL, stderr=subprocess.STDOUT)
-            os.remove(mp3FilePath)
             wavWave = wave.open(wavFilePath)
             wavLength = wavWave.getnframes()/float(wavWave.getframerate())
             wavWave.close()
             wordHash[w] = (wavFilePath, wavLength)
+        shutil.rmtree(self.MP3S_DIR)
 
         voiceData = []
         voiceWriter = None
-        print self.tonedWords[:5]
         for (i, (w,t,p,d)) in enumerate(self.tonedWords):
             currentLength = wordHash[w][1]
             targetLength = max(d, 1e-6)
