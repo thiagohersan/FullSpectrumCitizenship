@@ -276,7 +276,7 @@ class Song:
 
             tempoParam = (currentLength-targetLength)/targetLength*100.0
             #tempoParam /= 3 if(currentLength < targetLength) else 1.2
-            tempoParam = 0 if(currentLength < targetLength) else tempoParam/1.2
+            tempoParam = 0 if(currentLength < targetLength) else tempoParam
 
             outputFile = "%s/%s.wav" % (self.WAVS_DIR,i)
             stParams = "%s %s -tempo=%s" % (escSpace(wordHash[w][0]), outputFile, tempoParam)
