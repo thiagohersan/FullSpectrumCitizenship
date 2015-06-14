@@ -63,6 +63,7 @@ def vocode(tWav, vWav):
     vBytes = vWav.readframes(N)
     oBytes = []
 
+    ## TODO: implement overlapping windows
     while (len(tBytes) == M) and (len(vBytes) == M):
         tFloats = numpy.array(wave.struct.unpack("%dh"%(len(tBytes)/tWav.getsampwidth()), tBytes))*window
         vFloats = numpy.array(wave.struct.unpack("%dh"%(len(vBytes)/vWav.getsampwidth()), vBytes))*window

@@ -138,6 +138,8 @@ class Song:
                         toneTempoList = currentToneList
                         firstNoteTime = thisTracksFirstNoteTime
                         toneMedian = int(currentToneMin + (currentToneMax-currentToneMin)/2)
+                        toneSum = sum([tone for (tone,tempo) in toneTempoList])
+                        print "tone(max, avg): %s %s"%(currentToneMax,toneSum/len(toneTempoList))
 
         if len(toneTempoList) != len(self.syls):
             print "tone list length doesn't equal syllable list length"
@@ -159,6 +161,7 @@ class Song:
         midiParams = "-A 100 %s -OwM -o %s"%(outFileKar, outFileWav)
         subprocess.call('timidity '+midiParams, shell=True, stdout=self.FNULL, stderr=subprocess.STDOUT)
         os.remove(outFileKar)
+        ## TODO: lower pitch of entire song if necessary
 
         ## toned word list
         ultimateSyls = []
@@ -294,6 +297,7 @@ class Song:
                 voiceWriter.setparams((voiceReader.getnchannels(), sampwidth, framerate, 8, 'NONE', 'NONE'))
 
             # pad space between words with 0s
+            ## TODO: deal with case of overshooting (due to words with same start time)
             voiceData += [0] * (int((t[0]-self.firstNoteTime)*framerate) - len(voiceData))
             voiceData += voiceFloats
 
@@ -303,3 +307,5 @@ class Song:
         for (x,y) in zip(voiceData[0::2], voiceData[1::2]):
             voiceWriter.writeframes(wave.struct.pack("hh", x,y))
         voiceWriter.close()
+
+        # TODO: remove all temp wav files
