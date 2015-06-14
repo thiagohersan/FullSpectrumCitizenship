@@ -109,7 +109,7 @@ else:
     sys.exit(0)
 
 ob = vocode(wave.open(tune), wave.open(voice))
-of = wave.open("00vocoder.wav", 'w')
+of = wave.open(tune.replace(".wav", ".vox.wav"), 'w')
 of.setparams((1, 2, 44100, 8, 'NONE', 'NONE'))
 
 for (x,y) in zip(ob[0::2], ob[1::2]):
