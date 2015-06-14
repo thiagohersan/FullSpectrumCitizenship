@@ -210,7 +210,7 @@ class Song:
                 currentWord = (currentWord[0]+" "+words[ii][0],
                     currentWord[1]+words[ii][1],
                     currentWord[2]+words[ii][2],
-                    currentWord[3])
+                    max(currentWord[3], words[ii][3]))
                 ii += 1
             i = ii
             ultimateWords.append(currentWord)
