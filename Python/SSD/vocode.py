@@ -113,7 +113,6 @@ ob = vocode(wave.open(tune), wave.open(voice))
 of = wave.open(tune.replace(".wav", ".vox.wav"), 'w')
 of.setparams((1, 2, 44100, 8, 'NONE', 'NONE'))
 
-for (x,y) in zip(ob[0::2], ob[1::2]):
-    of.writeframes(wave.struct.pack("hh", x,y))
-
+print "writing to disk"
+of.writeframes(wave.struct.pack("%dh"%len(ob), *ob))
 of.close()

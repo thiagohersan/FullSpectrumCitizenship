@@ -284,8 +284,7 @@ class Song:
             voiceReader.close()
 
         print "writing to disk"
-        for x in voiceData:
-            voiceWriter.writeframes(wave.struct.pack("h", x))
+        voiceWriter.writeframes(wave.struct.pack("%dh"%len(voiceData), *voiceData))
         voiceWriter.close()
 
         # TODO: remove all temp wav files
