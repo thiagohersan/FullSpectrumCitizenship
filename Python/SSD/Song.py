@@ -154,7 +154,7 @@ class Song:
 
         tracks2remove = [t for t in candidatesForRemoval if t!=noteTrack and t!=self.midi.kartrack]
         outFileKar = self.filename.replace(".kar", "__.kar")
-        self.midi.write_file(self.filename, outFileKar, tracks2remove, None)
+        self.midi.write_file(self.filename, outFileKar, tracks2remove, None, noteTrack)
         outFileWav = "%s/00.%s.wav" % (self.WAVS_DIR,self.songname)
         midiParams = "-A 100 %s -OwM -o %s"%(outFileKar, outFileWav)
         subprocess.call('timidity '+midiParams, shell=True, stdout=self.FNULL, stderr=subprocess.STDOUT)

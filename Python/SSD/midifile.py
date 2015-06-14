@@ -422,7 +422,7 @@ print m.karlinea[0]+'__'+m.karlineb[0]
         return False
 
 
-    def write_file(self,filein,fileout,tracks2remove,patches2remove):
+    def write_file(self,filein,fileout,tracks2remove,patches2remove,track2trumpet=-1):
         if tracks2remove == None:
             tracks2remove=list()
         if patches2remove == None:
@@ -561,11 +561,12 @@ print m.karlinea[0]+'__'+m.karlineb[0]
                         writeevent=False
 
                     if status1 == 0b1100: # Program change
-                        read=self.fileobject.read(1)
+                        readb=self.fileobject.read(1)
+                        currentpatch=struct.unpack('>B',readb)[0]
+                        if(itrack == track2trumpet):
+                          readb=struct.pack('>B',61)
                         if writetrack:
-                            fout.write(read)
-                        read=struct.unpack('>B',read)[0]
-                        currentpatch=read
+                            fout.write(readb)
                         iread=iread+1
                     elif status1 == 0b1101: # After-touch
                         read=self.fileobject.read(1)
