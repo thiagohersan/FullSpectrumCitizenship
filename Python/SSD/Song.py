@@ -12,8 +12,6 @@ class Song:
         self.songname = os.path.basename(filename).replace(".kar", "")
         self.MP3S_DIR = "./mp3s/"+self.songname+"/"
         self.WAVS_DIR = self.MP3S_DIR.replace("mp3","wav")
-        self.syls = None
-        self.words = None
         self.lyrics = None
         self.tonedSyls = None
         self.tonedWords = None
@@ -21,12 +19,6 @@ class Song:
         self.midi=midifile.midifile()
         self.midi.load_file(filename)
         self.FNULL = open(os.devnull, 'w')
-
-    #   return a cleaned up array of (syllable, time) tuples and
-    #   an array of (word, time) tuples
-    def parseLyrics(self):
-        if (self.syls is not None) and (self.words is not None):
-            return (self.syls, self.words)
 
         # some initial clean up
         karsyl = list(self.midi.karsyl)
@@ -53,49 +45,8 @@ class Song:
         self.lyrics = self.lyrics.strip()
         print self.lyrics.decode('iso-8859-1')
 
-        # hack to deal with blank syllables and syllables that actually have more than one word
-        sylsNoBlanks = [(s.strip(),t) for (s,t) in zip(karsyl, kartimes) if s!='' and s!=' ']
-        ultimateSyls = []
-        for (s,t) in sylsNoBlanks:
-            for w in s.split():
-                ultimateSyls.append((w,t))
-
-        # get tuple of (word, trigger-time)
-        words = []
-        sylIndex = 0
-        for w in self.lyrics.split():
-            (s,t) = ultimateSyls[sylIndex]
-            words.append((w,t))
-            fromSyls = s
-            sylIndex += 1
-            while (fromSyls != w):
-                (s,t) = ultimateSyls[sylIndex]
-                fromSyls += s
-                sylIndex += 1
-
-        ## put words with same start time back together
-        ultimateWords = []
-        i = 0
-        while (i < len(words)):
-            currentWord = words[i]
-            ii = i+1
-            while (ii < len(words)) and (words[i][1] == words[ii][1]):
-                currentWord = (currentWord[0]+" "+words[ii][0], currentWord[1])
-                ii += 1
-            i = ii
-            ultimateWords.append(currentWord)
-
         # only return non-empty syllables
-        self.syls = [(s.lower(),t) for (s,t) in syls if s!='' and s!=' ']
-        self.words = words
-        return (self.syls, self.words)
-
-    def parseTones(self):
-        if (self.tonedSyls is not None) and (self.tonedWords is not None):
-            return (self.tonedSyls, self.tonedWords)
-
-        if self.syls is None or self.words is None:
-            self.parseLyrics()
+        syls = [(s.lower(),t) for (s,t) in syls if s!='' and s!=' ']
 
         noteTrack = None
         # figure out which track has notes for the lyrics
@@ -110,15 +61,15 @@ class Song:
                 candidatesForRemoval.append(n)
 
                 # deal with percussion tracks with lots of "notes"
-                if len(thisTrack) < 2*len(self.syls):
+                if len(thisTrack) < 2*len(syls):
                     currentSum = 0
-                    numberOfSums = len(self.syls)
+                    numberOfSums = len(syls)
                     currentToneList = []
                     currentToneMin = -1
                     currentToneMax = -1
                     thisTracksFirstNoteTime = thisTrack[0][5]
 
-                    for (s,t) in self.syls:
+                    for (s,t) in syls:
                         minDistance = -1
                         minDistanceTone = -1
                         minDistanceTempo = -1
@@ -151,13 +102,13 @@ class Song:
                         toneSum = sum([tone for (tone,tempo) in toneTempoList])
                         print "tone(max, avg): %s %s"%(currentToneMax,toneSum/len(toneTempoList))
 
-        if len(toneTempoList) != len(self.syls):
+        if len(toneTempoList) != len(syls):
             print "tone list length doesn't equal syllable list length"
             sys.exit(0)
 
         ## zip tone array into syls
         ##     this keeps track of tones relative to median
-        self.tonedSyls = [(s.strip(),t,p-toneMedian,d) for ((s,t),(p,d)) in zip(self.syls, toneTempoList)]
+        self.tonedSyls = [(s.strip(),t,p-toneMedian,d) for ((s,t),(p,d)) in zip(syls, toneTempoList)]
         self.firstNoteTime = firstNoteTime
 
         ## write out wav from stripped midi
@@ -218,8 +169,6 @@ class Song:
             ultimateWords.append((currentWord[0], currentWord[1], currentWord[2], sum(durations.keys())))
 
         self.tonedWords = ultimateWords
-
-        return (self.tonedSyls, self.tonedWords)
 
     def prepSyllableVoice(self):
         if self.tonedSyls is None:
