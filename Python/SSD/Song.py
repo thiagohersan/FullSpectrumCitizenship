@@ -154,19 +154,12 @@ class Song:
         i = 0
         while (i < len(words)):
             currentWord = words[i]
-            durations = {}
-            durations[currentWord[3]] = None
             ii = i+1
             while (ii < len(words)) and (words[i][1][0] == words[ii][1][0]):
-                durations[words[ii][3]] = None
-                currentWord = (currentWord[0]+" "+words[ii][0],
-                    currentWord[1]+words[ii][1],
-                    currentWord[2]+words[ii][2],
-                    currentWord[3])
+                currentWord = words[i] if(words[i][3] > words[ii][3]) else words[ii]
                 ii += 1
             i = ii
-
-            ultimateWords.append((currentWord[0], currentWord[1], currentWord[2], sum(durations.keys())))
+            ultimateWords.append(currentWord)
 
         self.tonedWords = ultimateWords
 
@@ -251,6 +244,7 @@ class Song:
 
         voiceData = []
         voiceWriter = None
+        overshot = 0
         for (i, (w,t,p,d)) in enumerate(self.tonedWords):
             currentLength = wordHash[w][1]
             targetLength = max(d, 1e-6)
@@ -276,7 +270,11 @@ class Song:
 
             # pad space between words with 0s
             ## TODO: deal with case of overshooting (due to words with same start time)
-            voiceData += [0] * (int((t[0]-self.firstNoteTime)*framerate) - len(voiceData))
+            numZeros = (int((t[0]-self.firstNoteTime)*framerate) - len(voiceData))
+            if(numZeros < 0):
+                overshot += 1
+
+            voiceData += [0] * numZeros
             voiceData += voiceFloats
 
             # close voice wav
@@ -286,4 +284,5 @@ class Song:
             voiceWriter.writeframes(wave.struct.pack("hh", x,y))
         voiceWriter.close()
 
+        print "overshot %s"%overshot
         # TODO: remove all temp wav files
