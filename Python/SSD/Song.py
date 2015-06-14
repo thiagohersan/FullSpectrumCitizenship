@@ -178,8 +178,6 @@ class Song:
         for (s,t,p,d) in self.tonedSyls:
             for w in s.split():
                 ultimateSyls.append((w,t,p,d))
-            if(len(s.split()) > 1):
-                print "%s"%(s.decode('iso-8859-1'))
 
         # get tuple of (word, (trigger-times), (pitches), duration)
         words = []
@@ -205,15 +203,19 @@ class Song:
         i = 0
         while (i < len(words)):
             currentWord = words[i]
+            durations = {}
+            durations[currentWord[3]] = None
             ii = i+1
             while (ii < len(words)) and (words[i][1][0] == words[ii][1][0]):
+                durations[words[ii][3]] = None
                 currentWord = (currentWord[0]+" "+words[ii][0],
                     currentWord[1]+words[ii][1],
                     currentWord[2]+words[ii][2],
-                    max(currentWord[3], words[ii][3]))
+                    currentWord[3])
                 ii += 1
             i = ii
-            ultimateWords.append(currentWord)
+
+            ultimateWords.append((currentWord[0], currentWord[1], currentWord[2], sum(durations.keys())))
 
         self.tonedWords = ultimateWords
 
@@ -301,9 +303,6 @@ class Song:
         voiceData = []
         voiceWriter = None
         for (i, (w,t,p,d)) in enumerate(self.tonedWords):
-            if(" " in w):
-                print "%s.wav %s"%(i, w)
-
             currentLength = wordHash[w][1]
             targetLength = max(d, 1e-6)
 
