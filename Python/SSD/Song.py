@@ -1,5 +1,5 @@
 import urllib2, urllib, os, sys, wave, math, subprocess
-import midifile
+import midifile, wave
 from getPitch import getPitchHz
 
 # escape space on filenames being sent to shell commands
@@ -17,6 +17,7 @@ class Song:
         self.lyrics = None
         self.tonedSyls = None
         self.tonedWords = None
+        self.firstNoteTime = None
         self.midi=midifile.midifile()
         self.midi.load_file(filename)
         self.FNULL = open(os.devnull, 'w')
@@ -92,6 +93,7 @@ class Song:
         candidatesForRemoval = []
         toneTempoList = []
         toneMedian = -1
+        firstNoteTime = -1
         for n in range(self.midi.ntracks):
             thisTrack = [v for v in self.midi.notes if v[4]==n]
             if (len(thisTrack) > 0):
@@ -104,6 +106,7 @@ class Song:
                     currentToneList = []
                     currentToneMin = -1
                     currentToneMax = -1
+                    thisTracksFirstNoteTime = thisTrack[0][5]
 
                     for (s,t) in self.syls:
                         minDistance = -1
@@ -133,7 +136,11 @@ class Song:
                         minDiff = currentSum/numberOfSums
                         noteTrack = n
                         toneTempoList = currentToneList
+                        firstNoteTime = thisTracksFirstNoteTime
                         toneMedian = int(currentToneMin + (currentToneMax-currentToneMin)/2)
+
+        noteTrackData = [v for v in self.midi.notes if v[4]==noteTrack]
+        print noteTrackData[:5]
 
         if len(toneTempoList) != len(self.syls):
             print "tone list length doesn't equal syllable list length"
@@ -142,6 +149,7 @@ class Song:
         ## zip tone array into syls
         ##     this keeps track of tones relative to median
         self.tonedSyls = [(s.strip(),t,p-toneMedian,d) for ((s,t),(p,d)) in zip(self.syls, toneTempoList)]
+        self.firstNoteTime = firstNoteTime
 
         ## write out wav from stripped midi
         if not os.path.exists(self.WAVS_DIR):
@@ -263,6 +271,9 @@ class Song:
             wavWave.close()
             wordHash[w] = (wavFilePath, wavLength)
 
+        voiceData = []
+        voiceWriter = None
+        print self.tonedWords[:5]
         for (i, (w,t,p,d)) in enumerate(self.tonedWords):
             currentLength = wordHash[w][1]
             targetLength = max(d, 1e-6)
@@ -274,3 +285,25 @@ class Song:
             outputFile = "%s/%s.wav" % (self.WAVS_DIR,i)
             stParams = "%s %s -tempo=%s" % (escSpace(wordHash[w][0]), outputFile, tempoParam)
             subprocess.call('./soundstretch '+stParams, shell='True', stdout=self.FNULL, stderr=subprocess.STDOUT)
+
+            voiceReader = wave.open(outputFile)
+            framerate = voiceReader.getframerate()
+            sampwidth = voiceReader.getsampwidth()
+            voiceBytes = voiceReader.readframes(voiceReader.getnframes())
+            voiceFloats = wave.struct.unpack("%dh"%(len(voiceBytes)/sampwidth), voiceBytes)
+
+            if (voiceWriter is None):
+                voiceFilename = "%s/%s.wav" % (self.WAVS_DIR,"00.vox")
+                voiceWriter = wave.open(voiceFilename, 'w')
+                voiceWriter.setparams((voiceReader.getnchannels(), sampwidth, framerate, 8, 'NONE', 'NONE'))
+
+            # pad space between words with 0s
+            voiceData += [0] * (int((t[0]-self.firstNoteTime)*framerate) - len(voiceData))
+            voiceData += voiceFloats
+
+            # close voice wav
+            voiceReader.close()
+
+        for (x,y) in zip(voiceData[0::2], voiceData[1::2]):
+            voiceWriter.writeframes(wave.struct.pack("hh", x,y))
+        voiceWriter.close()
