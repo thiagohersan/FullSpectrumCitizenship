@@ -221,6 +221,7 @@ class Song:
         url = 'http://translate.google.com/translate_tts?tl=pt&q='
         header = { 'User-Agent' : 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)' }
 
+        filesToBeDeleted = []
         if not os.path.exists(self.MP3S_DIR):
             os.makedirs(self.MP3S_DIR)
         if not os.path.exists(self.WAVS_DIR):
@@ -240,6 +241,7 @@ class Song:
             wavLength = wavWave.getnframes()/float(wavWave.getframerate())
             wavWave.close()
             wordHash[w] = (wavFilePath, wavLength)
+            filesToBeDeleted.append(escSpace(wavFilePath))
         shutil.rmtree(self.MP3S_DIR)
 
         voiceData = []
@@ -255,6 +257,7 @@ class Song:
             outputFile = "%s/%s.wav" % (self.WAVS_DIR,i)
             stParams = "%s %s -tempo=%s" % (escSpace(wordHash[w][0]), outputFile, tempoParam)
             subprocess.call('./soundstretch '+stParams, shell='True', stdout=self.FNULL, stderr=subprocess.STDOUT)
+            filesToBeDeleted.append(outputFile)
 
             voiceReader = wave.open(outputFile)
             framerate = voiceReader.getframerate()
@@ -287,4 +290,5 @@ class Song:
         voiceWriter.writeframes(wave.struct.pack("%dh"%len(voiceData), *voiceData))
         voiceWriter.close()
 
-        # TODO: remove all temp wav files
+        # remove all temp wav files
+        [os.remove(f) for f in filesToBeDeleted]
