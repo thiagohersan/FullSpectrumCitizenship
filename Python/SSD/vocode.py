@@ -11,25 +11,29 @@ import math, cmath, random
 # triangle:  y = 2*abs(saw)-iAmp
 
 def vocode(tWav, vWav):
-    N0 = 512
-    N = N0
-    M = tWav.getsampwidth()*tWav.getnchannels()*N
-    window = numpy.blackman(N*tWav.getnchannels())
-    tBytes = tWav.readframes(N)
-    vBytes = vWav.readframes(N)
-    oBytes = []
+    N = 512
+    M = 4
+    H = N/M
+    i = 0
+    window = numpy.blackman(N)
+    tBytes = tWav.readframes(tWav.getnframes())
+    vBytes = vWav.readframes(vWav.getnframes())
+    tFloats = numpy.array(wave.struct.unpack("%dh"%(len(tBytes)/tWav.getsampwidth()), tBytes))
+    vFloats = numpy.array(wave.struct.unpack("%dh"%(len(vBytes)/vWav.getsampwidth()), vBytes))
 
-    ## TODO: implement overlapping windows
-    while (len(tBytes) == M) and (len(vBytes) == M):
-        tFloats = numpy.array(wave.struct.unpack("%dh"%(len(tBytes)/tWav.getsampwidth()), tBytes))*window
-        vFloats = numpy.array(wave.struct.unpack("%dh"%(len(vBytes)/vWav.getsampwidth()), vBytes))*window
+    oFloats = [0] * max(len(tFloats), len(vFloats))
 
-        iAmp = max(max(tFloats), max(vFloats))
-        #vFloatSum = sum(map(abs, vFloats))
+    ## with overlapping windows
+    while (i+N < len(tFloats)) and (i+N < len(vFloats)):
+        tFloatWin = tFloats[i:i+N]*window
+        vFloatWin = vFloats[i:i+N]*window
+
+        iAmp = max(max(tFloatWin), max(vFloatWin))
+        vFloatSum = sum(map(abs, vFloatWin))
 
         # Take the full (complex) fft
-        tFftData=numpy.fft.fft(tFloats)
-        vFftData=numpy.fft.fft(vFloats)
+        tFftData=numpy.fft.fft(tFloatWin)
+        vFftData=numpy.fft.fft(vFloatWin)
 
         ## cartesian to polar
         tFftPolar = [cmath.polar(z) for z in tFftData]
@@ -42,21 +46,21 @@ def vocode(tWav, vWav):
         oFftData = [cmath.rect(r,p) for (r,p) in oFftPolar]
 
         ## ifft(mult-mags, tPhase)
-        oFloats = numpy.fft.ifft(oFftData)
-        oFloatsR = [numpy.round(z.real) for z in oFloats]
+        oFloatsZ = numpy.fft.ifft(oFftData)
 
+        ## convert back to real
+        oFloatsR = [numpy.round(z.real) for z in oFloatsZ]
+
+        ## scale and ignore parts of song without words
         oAmp = max(oFloatsR)
-        oBytes += [(o/oAmp*iAmp).astype('int16') for o in oFloatsR]
-        #oBytes += [(o/oAmp*iAmp).astype('int16') if vFloatSum>2*N else 0 for o in oFloatsR]
+        oFloatsO = [(v/oAmp*iAmp) for v in oFloatsR] if vFloatSum>2*N else numpy.zeros(N)
 
-        N = int(random.uniform(0.8*N0,1.2*N0))
-        M = tWav.getsampwidth()*tWav.getnchannels()*N
-        window = numpy.blackman(N*tWav.getnchannels())
+        ## sum into output array
+        oFloats[i:i+N] = map(lambda x,y:(x+y/M).astype('int16'), oFloats[i:i+N], oFloatsO)
 
-        tBytes = tWav.readframes(N)
-        vBytes = vWav.readframes(N)
+        i += H
 
-    return oBytes
+    return oFloats
 
 if len(sys.argv) > 2:
     tune = sys.argv[1]
