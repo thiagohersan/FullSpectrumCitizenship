@@ -1,6 +1,5 @@
 import urllib2, urllib, os, sys, shutil, wave, math, subprocess
 import midifile, wave
-from getPitch import getPitchHz
 
 # escape space on filenames being sent to shell commands
 def escSpace(s):
