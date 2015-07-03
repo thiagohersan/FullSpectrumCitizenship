@@ -6,7 +6,7 @@ def escSpace(s):
     return s.replace(" ", "\ ")
 
 class Song:
-    def __init__(self, filename):
+    def __init__(self, filename, justForTheLyrics=False):
         self.filename = filename
         self.songname = os.path.basename(filename).replace(".kar", "")
         self.MP3S_DIR = "./mp3s/"+self.songname+"/"
@@ -43,6 +43,9 @@ class Song:
             self.lyrics += s
         self.lyrics = self.lyrics.strip()
         print self.lyrics.decode('iso-8859-1')
+
+        if (justForTheLyrics):
+            return
 
         # only return non-empty syllables
         syls = [(s.lower(),t) for (s,t) in syls if s!='' and s!=' ']
