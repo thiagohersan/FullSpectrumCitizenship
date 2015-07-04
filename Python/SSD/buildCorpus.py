@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import sys, os, subprocess
+import sys, os, subprocess, getopt
 from Song import Song
 
 HASHTAGS = ["OGIGANTEACORDOU",
@@ -63,3 +63,21 @@ def getTweetText():
 
     corpusFile.close()
 
+
+if __name__=="__main__":
+    if len(sys.argv) < 2:
+        print "Please select song (-s --song) or tweet (-t --tweet) option"
+        sys.exit(2)
+
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "st", ["song", "tweet"])
+    except getopt.GetoptError as err:
+        print str(err)
+        print "Please select song (-s --song) or tweet (-t --tweet) option"
+        sys.exit(2)
+
+    for o, a in opts:
+        if o in ("-s", "--song"):
+            getSongText()
+        elif o in ("-t", "--tweet"):
+            getTweetText()
