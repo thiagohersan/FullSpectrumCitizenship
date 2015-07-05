@@ -6,21 +6,26 @@
 */
 
 var MINTIME = 1370516400; // = 06 Jun 2013 11:00am GMT
+var MIDTIME = 1371294000; // = 15 Jun 2013 11:00am GMT
 var MAXTIME = 1372590000; // = 30 Jun 2013 11:00am GMT
-var URL = "http://topsy.com/s?type=tweet&sort=-date&mintime="+MINTIME+"&maxtime="+MAXTIME;
-var URL_LENGTH = URL.length;
+
+var URL = "http://topsy.com/s?type=tweet&sort=-date";
 
 var system = require('system');
 var cHashTag = "";
 var cOffset = "0";
+var minTime = 1370516400;
+var maxTime = 1372590000;
 
 // Print usage message, if no twitter ID is passed
-if (system.args.length < 3) {
-    console.log("Usage: buildTweetCorpus.js [hashtag] [offset]");
+if (system.args.length < 5) {
+    console.log("Usage: buildTweetCorpus.js [hashtag] [offset] [mintime] [maxtime]");
     phantom.exit();
 } else {
     cHashTag = system.args[1];
     cOffset = system.args[2];
+    minTime = system.args[3];
+    maxTime = system.args[4];
 }
 
 function printTweets(url){
@@ -50,7 +55,7 @@ function printTweets(url){
                         console.log(s);
                     }
                 });
-                //console.log("\n---!!!---"+url.substring(URL_LENGTH)+"---!!!---\n");
+                //console.log("\n---!!!---"+url.substring(URL.length)+"---!!!---\n");
                 page.close();
                 phantom.exit();
             }, 100);
@@ -58,6 +63,6 @@ function printTweets(url){
     }
 }
 
-var furl = URL+"&q=%23"+cHashTag+"&offset="+cOffset;
+var furl = URL+"&mintime="+minTime+"&maxtime="+maxTime+"&q=%23"+cHashTag+"&offset="+cOffset;
 printTweets(furl)();
 

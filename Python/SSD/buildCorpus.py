@@ -24,6 +24,8 @@ CORPUS_DIR = "./txts"
 KARS_DIR = "../../../kars"
 JS_DIR = "../../JS"
 
+PERIODS = [(1370516400,1371294000), (1371298000,1372590000)]
+
 def getSongText():
     if not os.path.exists(CORPUS_DIR):
         os.makedirs(CORPUS_DIR)
@@ -47,19 +49,20 @@ def getTweetText():
     jsScript = os.path.join(JS_DIR, "buildTweetCorpus.js")
 
     for h in HASHTAGS:
-        numBlanks = 0
-        for o in range(0,1000,10):
-            print "--- %s[%s] ---"%(h, o)
-            out = subprocess.check_output("phantomjs %s %s %s"%(jsScript, h, o), shell=True)
-            print out
-            corpusFile.write(out)
-            if (len(out) < 1) or (out.isspace()):
-                numBlanks += 1
-            else:
-                numBlanks = 0
-            # if 5 blanks in a row ... go to next hashtag (this also triggers if 50 RTs in a row)
-            if numBlanks > 4:
-                break
+        for (t0,t1) in PERIODS:
+            numBlanks = 0
+            for o in range(0,1000,10):
+                print "--- %s[%s] [%s %s]---"%(h, o, t0, t1)
+                out = subprocess.check_output("phantomjs %s %s %s %s %s"%(jsScript, h, o, t0, t1), shell=True)
+                print out
+                corpusFile.write(out)
+                if (len(out) < 1) or (out.isspace()):
+                    numBlanks += 1
+                else:
+                    numBlanks = 0
+                # if 5 blanks in a row ... go to next hashtag/period (this also triggers if 50 RTs in a row)
+                if numBlanks > 4:
+                    break
 
     corpusFile.close()
 
