@@ -5,19 +5,18 @@ import sys, os, subprocess, getopt
 from Song import Song
 
 HASHTAGS = ["OGIGANTEACORDOU",
-            "OGIGANTEACRODOU",
             "MUDABRASIL",
             "ACORDABRASIL",
             "CHANGEBRAZIL",
+            "OBRASILACORDOU",
             "VEMPRARUA",
+            "CHUPADILMA",
             "SP17J",
             "PROTESTOSP",
             "PASSELIVRE",
             "MOVIMENTOPASSELIVRE",
             "NAOEPOR20CENTAVOSEPORDIREITOS",
             "VERASQUEUMFILHOTEUNAOFOGEALUTA",
-            "ACORDABRASIL",
-            "OBRASILACORDOU",
             "COPAPRAQUEM"]
 
 CORPUS_DIR = "./txts"
@@ -36,7 +35,7 @@ def getSongText():
     for f in allKarFiles:
         print "--- %s ---"%(os.path.basename(f))
         s = Song(f, justForTheLyrics=True)
-        corpusFile.write(s.lyrics.decode('iso-8859-1').encode('utf-8')+'\n\n')
+        corpusFile.write(s.lyrics.decode('iso-8859-1').lower().encode('utf-8')+'\n\n')
         corpusFile.flush()
 
     corpusFile.close()
