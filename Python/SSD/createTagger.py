@@ -25,13 +25,5 @@ tagger = nltk.TrigramTagger(train, backoff=tagger2)
 
 tagger.evaluate(test)
 
-
 with open(FILENAME, 'wb') as outFile:
     cPickle.dump(tagger, outFile, -1)
-
-
-'''
-with open(FILENAME, 'rb') as inFile:
-    tagger = cPickle.load(inFile)
-tagger.tag(['o', 'gigante', 'não'.decode('utf-8'), 'é'.decode('utf-8'), 'tão'.decode('utf-8'), 'grande', 'assim'])
-'''
