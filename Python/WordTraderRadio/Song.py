@@ -185,7 +185,7 @@ class Song:
             if mWordTrader is not None:
                 w_ = w
                 w = mWordTrader.trade(w,'iso-8859-1').encode('iso-8859-1')
-                print "%s -> %s"%(w_.decode('iso-8859-1'),w.decode('iso-8859-1'))
+                print "%s %s"%(w_.decode('iso-8859-1'),w.decode('iso-8859-1'))
             wordHash[w] = None
 
         url = 'http://translate.google.com/translate_tts?tl=pt&q='
