@@ -56,6 +56,7 @@ class Song:
         candidatesForRemoval = []
         toneTempoList = []
         toneMedian = -1
+        toneMax = -1
         firstNoteTime = -1
         for n in range(self.midi.ntracks):
             thisTrack = [v for v in self.midi.notes if v[4]==n]
@@ -101,6 +102,7 @@ class Song:
                         toneTempoList = currentToneList
                         firstNoteTime = thisTracksFirstNoteTime
                         toneMedian = int(currentToneMin + (currentToneMax-currentToneMin)/2)
+                        toneMax = currentToneMax
                         toneSum = sum([tone for (tone,tempo) in toneTempoList])
                         print "tone(max, med, avg): %s %s %s"%(currentToneMax,toneMedian,toneSum/len(toneTempoList))
 
@@ -124,8 +126,9 @@ class Song:
         midiParams = "-A 100 %s -OwM -o %s"%(outFileKar, outFileWav)
         subprocess.call('timidity '+midiParams, shell=True, stdout=self.FNULL, stderr=subprocess.STDOUT)
         os.remove(outFileKar)
-        if (toneMedian > 60):
-            pitchParam = 60-toneMedian
+
+        if (toneMax > 70):
+            pitchParam = 70-toneMax
             inFileWav = "%s/xx.%s.wav" % (self.WAVS_DIR,self.songname)
             subprocess.call('mv %s %s'%(outFileWav, inFileWav), shell='True', stdout=self.FNULL, stderr=subprocess.STDOUT)
 
