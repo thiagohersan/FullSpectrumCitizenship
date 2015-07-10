@@ -14,6 +14,7 @@ def vocode(tWav, vWav):
     N = 1024
     M = 3
     H = N/M
+    H_ = H/4
     i = 0
     window = numpy.blackman(N)
     tBytes = tWav.readframes(tWav.getnframes())
@@ -53,7 +54,7 @@ def vocode(tWav, vWav):
 
         ## scale and ignore parts of song without words
         oAmp = max(oFloatsR)
-        oFloatsO = [(v/oAmp*iAmp) for v in oFloatsR] if vFloatSum>H else numpy.zeros(N)
+        oFloatsO = [(v/oAmp*iAmp).astype('int16') for v in oFloatsR] if vFloatSum>H_ else numpy.zeros(N)
 
         ## sum into output array
         oFloats[i:i+N] = [(x+y/M) for (x,y) in zip(oFloats[i:i+N], oFloatsO)]
