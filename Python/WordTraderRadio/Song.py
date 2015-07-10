@@ -242,8 +242,7 @@ class Song:
             if (voiceWriter is None):
                 voiceFilename = "%s/%s.wav" % (self.WAVS_DIR,"00.vox")
                 if mWordTrader is not None:
-                    wordTraderName = os.path.basename(mWordTrader.targetWords.name).replace(".txt","").upper()
-                    voiceFilename = voiceFilename.replace(".wav", ".%s.wav"%wordTraderName)
+                    voiceFilename = voiceFilename.replace(".wav", ".%s.wav"%mWordTrader.name)
                 voiceWriter = wave.open(voiceFilename, 'w')
                 voiceWriter.setparams((voiceReader.getnchannels(), sampwidth, framerate, 8, 'NONE', 'NONE'))
 
