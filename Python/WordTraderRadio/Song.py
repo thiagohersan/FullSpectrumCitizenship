@@ -48,7 +48,7 @@ class Song:
             return
 
         # only return non-empty syllables
-        syls = [(s.lower(),t) for (s,t) in syls if s!='' and s!=' ']
+        syls = [(s.decode('iso-8859-1').lower().encode('iso-8859-1'),t) for (s,t) in syls if s!='' and s!=' ']
 
         noteTrack = None
         # figure out which track has notes for the lyrics
@@ -146,7 +146,7 @@ class Song:
         # get tuple of (word, (trigger-times), (pitches), duration)
         words = []
         sylIndex = 0
-        for w in self.lyrics.lower().split():
+        for w in self.lyrics.decode('iso-8859-1').lower().encode('iso-8859-1').split():
             (s,t,p,d) = ultimateSyls[sylIndex]
             fromSyls = s
             tt = [t]
@@ -223,6 +223,7 @@ class Song:
         for (i, (w_,t,p,d)) in enumerate(self.tonedWords):
             w = mWordTrader.trade(w_,'iso-8859-1').encode('iso-8859-1') if mWordTrader is not None else w_
             currentLength = wordHash[w][1]
+
             targetLength = max(d, 1e-6)
 
             tempoParam = (currentLength-targetLength)/targetLength*100.0
