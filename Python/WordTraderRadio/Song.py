@@ -198,19 +198,20 @@ class Song:
             os.makedirs(self.WAVS_DIR)
 
         for w in wordHash:
-            response = urllib2.urlopen(urllib2.Request(url+urllib.quote(w), None, header))
-            responseBytes = response.read()
             mp3FilePath = self.MP3S_DIR+w.decode('iso-8859-1')+'.mp3'
             wavFilePath = mp3FilePath.replace('mp3','wav')
-            f = open(mp3FilePath, 'wb')
-            f.write(responseBytes)
-            f.close()
-            ffParams = "-y -i %s -ar 44100 %s"%(escSpace(mp3FilePath), escSpace(wavFilePath))
-            subprocess.call('ffmpeg '+ffParams, shell=True, stdout=self.FNULL, stderr=subprocess.STDOUT)
-            wavWave = wave.open(wavFilePath)
-            wavLength = wavWave.getnframes()/float(wavWave.getframerate())
-            wavWave.close()
-            wordHash[w] = (wavFilePath, wavLength)
+            if not os.path.isfile(mp3FilePath):
+                response = urllib2.urlopen(urllib2.Request(url+urllib.quote(w), None, header))
+                responseBytes = response.read()
+                f = open(mp3FilePath, 'wb')
+                f.write(responseBytes)
+                f.close()
+                ffParams = "-y -i %s -ar 44100 %s"%(escSpace(mp3FilePath), escSpace(wavFilePath))
+                subprocess.call('ffmpeg '+ffParams, shell=True, stdout=self.FNULL, stderr=subprocess.STDOUT)
+                wavWave = wave.open(wavFilePath)
+                wavLength = wavWave.getnframes()/float(wavWave.getframerate())
+                wavWave.close()
+                wordHash[w] = (wavFilePath, wavLength)
             filesToBeDeleted.append(escSpace(wavFilePath))
         shutil.rmtree(self.MP3S_DIR)
 
