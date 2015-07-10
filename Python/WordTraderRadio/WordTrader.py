@@ -40,8 +40,13 @@ class WordTrader:
                             if (minCost<0) or ((cCost < minCost) and random.random() < 0.7):
                                 minCost = cCost
                                 candidate = w
-                            if cCost < 2:
+                            if cCost < 3:
                                 break
+
+                    # prevents matching words with very different sizes
+                    if cCost > 3:
+                        cCost = 0
+                        candidate = oWord
 
                     if minCost is not -1:
                         # found something in for loop
