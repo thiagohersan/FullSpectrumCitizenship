@@ -49,14 +49,14 @@ def vocode(tWav, vWav):
         oFloatsZ = numpy.fft.ifft(oFftData)
 
         ## convert back to real
-        oFloatsR = [numpy.round(z.real) for z in oFloatsZ]
+        oFloatsR = numpy.round([z.real for z in oFloatsZ])
 
         ## scale and ignore parts of song without words
         oAmp = max(oFloatsR)
         oFloatsO = [(v/oAmp*iAmp) for v in oFloatsR] if vFloatSum>H else numpy.zeros(N)
 
         ## sum into output array
-        oFloats[i:i+N] = map(lambda x,y:(x+y/M).astype('int16'), oFloats[i:i+N], oFloatsO)
+        oFloats[i:i+N] = [(x+y/M).astype('int16') for (x,y) in zip(oFloats[i:i+N], oFloatsO)]
 
         i += H
 
