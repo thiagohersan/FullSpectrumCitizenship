@@ -102,7 +102,7 @@ class Song:
                         firstNoteTime = thisTracksFirstNoteTime
                         toneMedian = int(currentToneMin + (currentToneMax-currentToneMin)/2)
                         toneSum = sum([tone for (tone,tempo) in toneTempoList])
-                        print "tone(max, avg): %s %s"%(currentToneMax,toneSum/len(toneTempoList))
+                        print "tone(max, med, avg): %s %s %s"%(currentToneMax,toneMedian,toneSum/len(toneTempoList))
 
         if len(toneTempoList) != len(syls):
             print "tone list length doesn't equal syllable list length"
@@ -124,7 +124,14 @@ class Song:
         midiParams = "-A 100 %s -OwM -o %s"%(outFileKar, outFileWav)
         subprocess.call('timidity '+midiParams, shell=True, stdout=self.FNULL, stderr=subprocess.STDOUT)
         os.remove(outFileKar)
-        ## TODO: lower pitch of entire song if necessary
+        if (toneMedian > 60):
+            pitchParam = 60-toneMedian
+            inFileWav = "%s/xx.%s.wav" % (self.WAVS_DIR,self.songname)
+            subprocess.call('mv %s %s'%(outFileWav, inFileWav), shell='True', stdout=self.FNULL, stderr=subprocess.STDOUT)
+
+            stParams = "%s %s -pitch=%s" % (inFileWav, outFileWav, pitchParam)
+            subprocess.call('soundstretch '+stParams, shell='True', stdout=self.FNULL, stderr=subprocess.STDOUT)
+            subprocess.call('rm %s'%(inFileWav), shell='True', stdout=self.FNULL, stderr=subprocess.STDOUT)
 
         ## toned word list
         ultimateSyls = []
