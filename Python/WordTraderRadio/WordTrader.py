@@ -37,15 +37,15 @@ class WordTrader:
                         # don't repeat words
                         if w not in self.taken:
                             cCost = abs(len(oWord) - len(w))
-                            if (minCost<0) or ((cCost < minCost) and random.random() < 0.7):
+                            if (minCost < 0) or ((cCost < minCost) and random.random() < 0.7):
                                 minCost = cCost
                                 candidate = w
-                            if cCost < 3:
+                            if (minCost > -1) and (minCost < 3):
                                 break
 
                     # prevents matching words with very different sizes
-                    if cCost > 3:
-                        cCost = 0
+                    if minCost > 3:
+                        minCost = 0
                         candidate = oWord
 
                     if minCost is not -1:
