@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import re, operator, cPickle, random
-
+import re, os, operator, cPickle, random
 
 class WordTrader:
     class LoopException(Exception):
@@ -13,6 +12,7 @@ class WordTrader:
         self.taken = []
 
     def __init__(self, originalCorpusFile, targetCorpusFile):
+        self.name = os.path.basename(targetCorpusFile).replace(".txt","").upper()
         self.originalWords = WordAnalyzer(originalCorpusFile)
         self.targetWords = WordAnalyzer(targetCorpusFile)
         self.reset()
@@ -61,6 +61,22 @@ class WordTrader:
                 self.replacementWords[originalWord] = originalWord
                 return self.replacementWords[originalWord]
             
+class ManualWordTrader(WordTrader):
+    def __init__(self, dictFilename):
+        self.name = os.path.basename(dictFilename).replace(".txt","").upper()
+        self.reset()
+        with open(dictFilename, 'r') as dictFile:
+            for line in dictFile:
+                (k,v) = line.split()
+                self.replacementWords[k.decode('utf-8')] = v.decode('utf-8')
+
+    def trade(self, originalWord, enc='utf-8'):
+        originalWord = originalWord.decode(enc)
+        if originalWord in self.replacementWords:
+            return self.replacementWords[originalWord]
+        else:
+            self.replacementWords[originalWord] = originalWord
+            return self.replacementWords[originalWord]
 
 class WordAnalyzer:
     TAGGER_FILENAME = "txts/floresta_trigram.pos"
