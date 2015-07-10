@@ -176,49 +176,6 @@ class Song:
 
         self.tonedWords = ultimateWords
 
-    def prepSyllableVoice(self):
-        ## hash for downloading initial files
-        ##     this maps to (filename, wave object)
-        sylHash = {}
-        for (s,t,p,d) in self.tonedSyls:
-            sylHash[s] = None
-
-        url = 'http://translate.google.com/translate_tts?tl=pt&q='
-        header = { 'User-Agent' : 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)' }
-
-        if not os.path.exists(self.MP3S_DIR):
-            os.makedirs(self.MP3S_DIR)
-        if not os.path.exists(self.WAVS_DIR):
-            os.makedirs(self.WAVS_DIR)
-
-        for s in sylHash:
-            mp3FilePath = self.MP3S_DIR+s.decode('iso-8859-1')+'.mp3'
-            wavFilePath = mp3FilePath.replace('mp3','wav')
-            if not os.path.isfile(mp3FilePath):
-                response = urllib2.urlopen(urllib2.Request(url+urllib.quote(s), None, header))
-                responseBytes = response.read()
-                f = open(mp3FilePath, 'wb')
-                f.write(responseBytes)
-                f.close()
-                ffParams = "-y -i %s -ar 44100 %s"%(escSpace(mp3FilePath), escSpace(wavFilePath))
-                subprocess.call('ffmpeg '+ffParams, shell=True, stdout=self.FNULL, stderr=subprocess.STDOUT)
-                wavWave = wave.open(wavFilePath)
-                wavLength = wavWave.getnframes()/float(wavWave.getframerate())
-                wavWave.close()
-                sylHash[s] = (wavFilePath, wavLength)
-        shutil.rmtree(self.MP3S_DIR)
-
-        for (i, (s,t,p,d)) in enumerate(self.tonedSyls):
-            currentLength = sylHash[s][1]
-            targetLength = max(d, 1e-6)
-
-            tempoParam = (currentLength-targetLength)/targetLength*100.0
-            tempoParam = tempoParam/1.5 if(currentLength < targetLength) else tempoParam/1.2
-
-            outputFile = "%s/%s.wav" % (self.WAVS_DIR,i)
-            stParams = "%s %s -tempo=%s" % (escSpace(sylHash[s][0]), outputFile, tempoParam)
-            subprocess.call('soundstretch '+stParams, shell='True', stdout=self.FNULL, stderr=subprocess.STDOUT)
-
     def prepWordVoice(self):
         ## hash for downloading initial files
         ##     this maps to (filename, wave object)
