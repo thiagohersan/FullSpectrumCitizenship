@@ -204,7 +204,7 @@ class Song:
             targetLength = max(d, 1e-6)
 
             tempoParam = (currentLength-targetLength)/targetLength*100.0
-            tempoParam = tempoParam/2 if(currentLength < targetLength) else tempoParam/1.2
+            tempoParam = tempoParam/1.5 if(currentLength < targetLength) else tempoParam/1.2
 
             outputFile = "%s/%s.wav" % (self.WAVS_DIR,i)
             stParams = "%s %s -tempo=%s" % (escSpace(sylHash[s][0]), outputFile, tempoParam)
@@ -253,7 +253,7 @@ class Song:
             targetLength = max(d, 1e-6)
 
             tempoParam = (currentLength-targetLength)/targetLength*100.0
-            tempoParam = tempoParam/2 if(currentLength < targetLength) else tempoParam
+            tempoParam = tempoParam/1.5 if(currentLength < targetLength) else tempoParam
 
             outputFile = "%s/%s.wav" % (self.WAVS_DIR,i)
             stParams = "%s %s -tempo=%s" % (escSpace(wordHash[w][0]), outputFile, tempoParam)
