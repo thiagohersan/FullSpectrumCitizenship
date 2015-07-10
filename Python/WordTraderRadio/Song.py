@@ -181,7 +181,11 @@ class Song:
         ##     this maps to (filename, audio length in seconds)
         wordHash = {}
         for (w,t,p,d) in self.tonedWords:
-            ## TODO: if mWordTrader
+            # swap words
+            if mWordTrader is not None:
+                w_ = w
+                w = mWordTrader.trade(w,'iso-8859-1').encode('iso-8859-1')
+                print "%s -> %s"%(w_.decode('iso-8859-1'),w.decode('iso-8859-1'))
             wordHash[w] = None
 
         url = 'http://translate.google.com/translate_tts?tl=pt&q='
@@ -213,8 +217,7 @@ class Song:
         voiceData = []
         voiceWriter = None
         for (i, (w_,t,p,d)) in enumerate(self.tonedWords):
-            w = w_
-            ## TODO: w = mWordTrader.trade(w_) if mWordTrader else w_
+            w = mWordTrader.trade(w_,'iso-8859-1').encode('iso-8859-1') if mWordTrader is not None else w_
             currentLength = wordHash[w][1]
             targetLength = max(d, 1e-6)
 
@@ -233,8 +236,10 @@ class Song:
             voiceFloats = wave.struct.unpack("%dh"%(len(voiceBytes)/sampwidth), voiceBytes)
 
             if (voiceWriter is None):
-                ## TODO: maybe change name to reflect WordTrader
                 voiceFilename = "%s/%s.wav" % (self.WAVS_DIR,"00.vox")
+                if mWordTrader is not None:
+                    wordTraderName = os.path.basename(mWordTrader.targetWords.name).replace(".txt","").upper()
+                    voiceFilename = voiceFilename.replace(".wav", ".%s.wav"%wordTraderName)
                 voiceWriter = wave.open(voiceFilename, 'w')
                 voiceWriter.setparams((voiceReader.getnchannels(), sampwidth, framerate, 8, 'NONE', 'NONE'))
 
