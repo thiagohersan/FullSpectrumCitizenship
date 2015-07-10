@@ -204,11 +204,11 @@ class Song:
             targetLength = max(d, 1e-6)
 
             tempoParam = (currentLength-targetLength)/targetLength*100.0
-            tempoParam = 0 if(currentLength < targetLength) else tempoParam/1.2
+            tempoParam = tempoParam/2 if(currentLength < targetLength) else tempoParam/1.2
 
             outputFile = "%s/%s.wav" % (self.WAVS_DIR,i)
             stParams = "%s %s -tempo=%s" % (escSpace(sylHash[s][0]), outputFile, tempoParam)
-            subprocess.call('./soundstretch '+stParams, shell='True', stdout=self.FNULL, stderr=subprocess.STDOUT)
+            subprocess.call('soundstretch '+stParams, shell='True', stdout=self.FNULL, stderr=subprocess.STDOUT)
 
     def prepWordVoice(self):
         if self.tonedWords is None:
@@ -253,12 +253,11 @@ class Song:
             targetLength = max(d, 1e-6)
 
             tempoParam = (currentLength-targetLength)/targetLength*100.0
-            #tempoParam /= 3 if(currentLength < targetLength) else 1.2
-            tempoParam = 0 if(currentLength < targetLength) else tempoParam
+            tempoParam = tempoParam/2 if(currentLength < targetLength) else tempoParam
 
             outputFile = "%s/%s.wav" % (self.WAVS_DIR,i)
             stParams = "%s %s -tempo=%s" % (escSpace(wordHash[w][0]), outputFile, tempoParam)
-            subprocess.call('./soundstretch '+stParams, shell='True', stdout=self.FNULL, stderr=subprocess.STDOUT)
+            subprocess.call('soundstretch '+stParams, shell='True', stdout=self.FNULL, stderr=subprocess.STDOUT)
             filesToBeDeleted.append(outputFile)
 
             voiceReader = wave.open(outputFile)
