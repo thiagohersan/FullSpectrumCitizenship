@@ -178,7 +178,7 @@ class Song:
 
     def prepWordVoice(self):
         ## hash for downloading initial files
-        ##     this maps to (filename, wave object)
+        ##     this maps to (filename, audio length in seconds)
         wordHash = {}
         for (w,t,p,d) in self.tonedWords:
             wordHash[w] = None
