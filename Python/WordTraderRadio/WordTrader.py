@@ -58,7 +58,6 @@ class WordTrader:
                 raise WordTrader.LoopException
 
             except (ValueError, ZeroDivisionError, WordTrader.LoopException) as e:
-                print "exception %s"%e
                 self.replacementWords[originalWord] = originalWord
                 return self.replacementWords[originalWord]
             
