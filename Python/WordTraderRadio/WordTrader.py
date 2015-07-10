@@ -37,15 +37,15 @@ class WordTrader:
                     posListStartIndex = int(oWordIndexPct*len(tPosList)) if oWordIndexPct>0.6 else 0
                     for w in tPosList[posListStartIndex:]:
                         # don't repeat words
-                        if w in self.taken:
-                            print "%s is take"%w
-                            continue
-                        cCost = abs(len(oWord) - len(w))
-                        if (minCost<0) or ((cCost < minCost) and random.random() < 0.7):
-                            minCost = cCost
-                            candidate = w
-                        if cCost < 2:
-                            break
+                        if w not in self.taken:
+                            cCost = abs(len(oWord) - len(w))
+                            if (minCost<0) or ((cCost < minCost) and random.random() < 0.7):
+                                minCost = cCost
+                                candidate = w
+                            if cCost < 2:
+                                break
+                        else:
+                            print "%s is taken"%w
 
                     if minCost is not -1:
                         # found something in for loop
