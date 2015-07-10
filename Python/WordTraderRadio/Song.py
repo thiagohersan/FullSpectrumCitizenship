@@ -87,6 +87,7 @@ class Song:
                                     minDistanceTempo = thisTrack[ii][5]-v[5]
                                     ii += 1
                                 if (minDistanceTempo == 0):
+                                    ii = max(1,i)
                                     minDistanceTempo = thisTrack[ii][5]-thisTrack[ii-1][5]
 
                         currentSum = currentSum + minDistance*minDistance
@@ -136,7 +137,7 @@ class Song:
             subprocess.call('soundstretch '+stParams, shell='True', stdout=self.FNULL, stderr=subprocess.STDOUT)
             subprocess.call('rm %s'%(inFileWav), shell='True', stdout=self.FNULL, stderr=subprocess.STDOUT)
 
-        ## toned word list
+        ## fix case where syllable has multiple syllables
         ultimateSyls = []
         for (s,t,p,d) in self.tonedSyls:
             for w in s.split():
@@ -176,9 +177,6 @@ class Song:
         self.tonedWords = ultimateWords
 
     def prepSyllableVoice(self):
-        if self.tonedSyls is None:
-            self.parseTones()
-
         ## hash for downloading initial files
         ##     this maps to (filename, wave object)
         sylHash = {}
@@ -222,9 +220,6 @@ class Song:
             subprocess.call('soundstretch '+stParams, shell='True', stdout=self.FNULL, stderr=subprocess.STDOUT)
 
     def prepWordVoice(self):
-        if self.tonedWords is None:
-            self.parseTones()
-
         ## hash for downloading initial files
         ##     this maps to (filename, wave object)
         wordHash = {}
