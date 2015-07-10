@@ -20,7 +20,6 @@ class WordTrader:
     def trade(self, originalWord, enc='utf-8'):
         originalWord = originalWord.decode(enc)
         if originalWord in self.replacementWords:
-            print "shortcut %s"%originalWord
             return self.replacementWords[originalWord]
 
         for (oWord, oPos) in WordAnalyzer.tagger.tag([originalWord]):
@@ -29,7 +28,6 @@ class WordTrader:
             try:
                 oWordIndexPct = oPosList.index(oWord)/float(len(oPosList))
                 # word is in original corpus
-                print "word in original corpus"
                 if random.random() > oWordIndexPct:
                     # word is somewhat common, let's swap it
                     # (could use len or other metric here)
@@ -44,8 +42,6 @@ class WordTrader:
                                 candidate = w
                             if cCost < 2:
                                 break
-                        else:
-                            print "%s is taken"%w
 
                     if minCost is not -1:
                         # found something in for loop
