@@ -11,8 +11,8 @@ import math, cmath, random
 # triangle:  y = 2*abs(saw)-iAmp
 
 def vocode(tWav, vWav):
-    N = 512
-    M = 4
+    N = 1024
+    M = 3
     H = N/M
     i = 0
     window = numpy.blackman(N)
@@ -40,7 +40,7 @@ def vocode(tWav, vWav):
         vFftPolar = [cmath.polar(z) for z in vFftData]
 
         ## multiply magnitudes
-        oFftPolar = [(r0*r1, p1) for ((r0,p0), (r1,p1)) in zip(tFftPolar, vFftPolar)]
+        oFftPolar = [(r0*r1, p0) for ((r0,p0), (r1,p1)) in zip(tFftPolar, vFftPolar)]
 
         ## polar to cartesian
         oFftData = [cmath.rect(r,p) for (r,p) in oFftPolar]
@@ -53,7 +53,7 @@ def vocode(tWav, vWav):
 
         ## scale and ignore parts of song without words
         oAmp = max(oFloatsR)
-        oFloatsO = [(v/oAmp*iAmp) for v in oFloatsR] if vFloatSum>2*N else numpy.zeros(N)
+        oFloatsO = [(v/oAmp*iAmp) for v in oFloatsR] if vFloatSum>H else numpy.zeros(N)
 
         ## sum into output array
         oFloats[i:i+N] = map(lambda x,y:(x+y/M).astype('int16'), oFloats[i:i+N], oFloatsO)
