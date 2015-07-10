@@ -56,7 +56,7 @@ def vocode(tWav, vWav):
         oFloatsO = [(v/oAmp*iAmp) for v in oFloatsR] if vFloatSum>H else numpy.zeros(N)
 
         ## sum into output array
-        oFloats[i:i+N] = [(x+y/M).astype('int16') for (x,y) in zip(oFloats[i:i+N], oFloatsO)]
+        oFloats[i:i+N] = [(x+y/M) for (x,y) in zip(oFloats[i:i+N], oFloatsO)]
 
         i += H
 
