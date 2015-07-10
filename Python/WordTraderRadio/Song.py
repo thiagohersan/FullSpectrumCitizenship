@@ -198,10 +198,13 @@ class Song:
             os.makedirs(self.WAVS_DIR)
 
         for w in wordHash:
+            toPronounce = w
+            if w == 'rua':
+                toPronounce = 'ruua'
             mp3FilePath = self.MP3S_DIR+w.decode('iso-8859-1')+'.mp3'
             wavFilePath = mp3FilePath.replace('mp3','wav')
             if not os.path.isfile(mp3FilePath):
-                response = urllib2.urlopen(urllib2.Request(url+urllib.quote(w), None, header))
+                response = urllib2.urlopen(urllib2.Request(url+urllib.quote(toPronounce), None, header))
                 responseBytes = response.read()
                 f = open(mp3FilePath, 'wb')
                 f.write(responseBytes)
