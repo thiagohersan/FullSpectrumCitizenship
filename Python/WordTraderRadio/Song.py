@@ -176,11 +176,12 @@ class Song:
 
         self.tonedWords = ultimateWords
 
-    def prepWordVoice(self):
+    def prepWordVoice(self, mWordTrader=None):
         ## hash for downloading initial files
         ##     this maps to (filename, audio length in seconds)
         wordHash = {}
         for (w,t,p,d) in self.tonedWords:
+            ## TODO: if mWordTrader
             wordHash[w] = None
 
         url = 'http://translate.google.com/translate_tts?tl=pt&q='
@@ -211,7 +212,9 @@ class Song:
 
         voiceData = []
         voiceWriter = None
-        for (i, (w,t,p,d)) in enumerate(self.tonedWords):
+        for (i, (w_,t,p,d)) in enumerate(self.tonedWords):
+            w = w_
+            ## TODO: w = mWordTrader.trade(w_) if mWordTrader else w_
             currentLength = wordHash[w][1]
             targetLength = max(d, 1e-6)
 
@@ -230,6 +233,7 @@ class Song:
             voiceFloats = wave.struct.unpack("%dh"%(len(voiceBytes)/sampwidth), voiceBytes)
 
             if (voiceWriter is None):
+                ## TODO: maybe change name to reflect WordTrader
                 voiceFilename = "%s/%s.wav" % (self.WAVS_DIR,"00.vox")
                 voiceWriter = wave.open(voiceFilename, 'w')
                 voiceWriter.setparams((voiceReader.getnchannels(), sampwidth, framerate, 8, 'NONE', 'NONE'))
