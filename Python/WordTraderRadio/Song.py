@@ -250,7 +250,7 @@ class Song:
             # pad space between words with 0s
             # deal with case of overshooting (due to words with same start time)
             numZeros = (int((t[0]-self.firstNoteTime)*framerate) - len(voiceData))
-            if(numZeros < 0):
+            if(numZeros < 0) and (abs(numZeros) < len(voiceData)):
                 for j in range(numZeros,0):
                     voiceData[j] *= 0.5
                     if (j-numZeros < len(voiceFloats)):
