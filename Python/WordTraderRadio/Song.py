@@ -251,10 +251,10 @@ class Song:
             # deal with case of overshooting (due to words with same start time)
             numZeros = (int((t[0]-self.firstNoteTime)*framerate) - len(voiceData))
             if(numZeros < 0):
-                for i in range(numZeros,0):
-                    voiceData[i] *= 0.5
-                    if (i-numZeros < len(voiceFloats)):
-                        voiceData[i] += voiceFloats[i-numZeros]*0.5
+                for j in range(numZeros,0):
+                    voiceData[j] *= 0.5
+                    if (j-numZeros < len(voiceFloats)):
+                        voiceData[j] += voiceFloats[j-numZeros]*0.5
                 voiceFloats = voiceFloats[-numZeros:]
 
             voiceData += [0] * numZeros
