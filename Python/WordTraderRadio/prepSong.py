@@ -16,8 +16,8 @@ if not s.midi.karfile:
     print "This is not a karaoke file."
     sys.exit(0)
 
-tweetTrader=WordTrader("txts/songs.txt", "txts/tweets.txt")
-blogTrader=WordTrader("txts/songs.txt", "txts/blogs.txt")
+tweetTrader=WordTrader("txts/corpus.songs.txt", "txts/corpus.tweets.txt")
+blogTrader=WordTrader("txts/corpus.songs.txt", "txts/corpus.blogs.txt")
 manualTrader=ManualWordTrader("txts/manual.tweets.txt")
 
 ## plain
