@@ -216,14 +216,13 @@ class Song:
                 f = open(mp3FilePath, 'wb')
                 f.write(responseBytes)
                 f.close()
-                ffParams = "-y -i %s -ar 44100 %s"%(escSpace(mp3FilePath), escSpace(wavFilePath))
-                subprocess.call('ffmpeg '+ffParams, shell=True, stdout=self.FNULL, stderr=subprocess.STDOUT)
-                wavWave = wave.open(wavFilePath)
-                wavLength = wavWave.getnframes()/float(wavWave.getframerate())
-                wavWave.close()
-                wordHash[w] = (wavFilePath, wavLength)
+            ffParams = "-y -i %s -ar 44100 %s"%(escSpace(mp3FilePath), escSpace(wavFilePath))
+            subprocess.call('ffmpeg '+ffParams, shell=True, stdout=self.FNULL, stderr=subprocess.STDOUT)
+            wavWave = wave.open(wavFilePath)
+            wavLength = wavWave.getnframes()/float(wavWave.getframerate())
+            wavWave.close()
+            wordHash[w] = (wavFilePath, wavLength)
             filesToBeDeleted.append(escSpace(wavFilePath))
-        shutil.rmtree(self.MP3S_DIR)
 
         voiceData = []
         voiceWriter = None
