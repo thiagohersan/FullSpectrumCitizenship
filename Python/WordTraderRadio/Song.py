@@ -1,5 +1,7 @@
+# -*- coding: utf-8 -*-
+
 import urllib2, urllib, os, sys, shutil, wave, math, subprocess
-import midifile, wave
+import midifile
 
 # escape space on filenames being sent to shell commands
 def escSpace(s):
@@ -106,6 +108,11 @@ class Song:
                         toneMax = currentToneMax
                         toneSum = sum([tone for (tone,tempo) in toneTempoList])
                         print "tone(max, med, avg): %s %s %s"%(currentToneMax,toneMedian,toneSum/len(toneTempoList))
+
+        if len(toneTempoList) > len(syls):
+            toneTempoList = toneTempoList[0:len(syls)]
+        if len(toneTempoList) < len(syls):
+            syls = syls[0:len(toneTempoList)]
 
         if len(toneTempoList) != len(syls):
             print "tone list length doesn't equal syllable list length"
